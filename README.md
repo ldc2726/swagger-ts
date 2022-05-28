@@ -18,8 +18,8 @@ npm install swagger-ts-api -g
 
 ##### 在自己目录中执行添加命令(发布npm和不发布npm的区别就在于 + 符号)：
 ```
-swagger -a #添加新的swagger api
-swagger -a + #添加新的swagger api 并发布到npm，请确保自己的npm已经登陆
+swagger-ts -a #添加新的swagger api
+swagger-ts -a + #添加新的swagger api 并发布到npm，请确保自己的npm已经登陆
 
 ```
 
@@ -36,14 +36,14 @@ swagger -a + #添加新的swagger api 并发布到npm，请确保自己的npm已
 
 ##### 在自己目录中执行更新命令：
 ```
-swagger -u #更新的swagger api
-swagger -u + #更新的swagger api并发布到npm，请确保自己的npm已经登陆
-swagger -h  #查看帮助
+swagger-ts -u #更新的swagger api
+swagger-ts -u + #更新的swagger api并发布到npm，请确保自己的npm已经登陆
+swagger-ts -h  #查看帮助
 ```
 
 ```
 # 效果：
-swagger -u +
+swagger-ts -u +
 ? 请选择更新的api: test-api
 ✔ swagger api同步完成！
 ```
