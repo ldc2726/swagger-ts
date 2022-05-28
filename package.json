@@ -1,6 +1,6 @@
 {
   "name": "swagger-ts-api",
-  "version": "1.0.0",
+  "version": "1.0.41",
   "description": "This is a swagger to TS request file plugin that can help us improve development efficiency even more.",
   "main": "index.js",
   "scripts": {
@@ -18,10 +18,9 @@
     "ts",
     "vue3"
   ],
-  "dependencies": {},
-  "devDependencies": {
-    "chalk": "^4.1.2",
+  "dependencies": {
     "axios": "^0.26.0",
+    "chalk": "^4.1.2",
     "child_process": "^1.0.2",
     "commander": "^9.0.0",
     "download-git-repo": "^3.0.2",
@@ -29,6 +28,7 @@
     "inquirer": "^8.2.0",
     "ora": "^4.0.3"
   },
+  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/ldc2726/swagger-ts"
