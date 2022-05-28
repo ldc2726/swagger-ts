@@ -61,5 +61,47 @@ swagger-ts -u +
         │   ├── README.md                      // api使用介绍 （这里是以发布npm为例的使用介绍）
 ```   
 
+我们每个接口都有对应的注释说明，这样也就方便大家直接检索，严格按照swagger文档进行解析而来，需要注意的是`int64`和`int32`在前端js里面无法进行严格的区分，只有`number`类型，为避免`number`js长度限制所以我们这里会直接定义`number｜string`类型.文件内容展示：
+
+``` javascript
+// test-api/swagger-api/index.ts
+
+import * as types from './../swagger-utils/index'
+import { HttpRequest } from './../main'
+/**
+ * 获取：地址编码[地址信息入参]
+ */
+export const mapGetGeo = (data: types.GetGeoDto) => {
+  return HttpRequest().$post<types.GeoAddressVo>({
+    url: '/infra/v1/Map/GetGeo',
+    data: data
+  })
+}
+```
+``` javascript
+// test-api/swagger-utils/index.ts
+
+/**
+* 获取：地址编码[地址信息入参]
+*/
+export interface GetGeoDto {
+  address?: string;// 地址：结构化地址信息
+  province?: string;// 省份
+  city?: string;// 城市名称  
+}
+
+/**
+* 获取：地址编码[地址信息入参]Res
+*/
+export interface GeoAddressVo {
+  name: string;
+  streetNumber: string;
+  level: string;
+  precise: boolean;
+  confidence: integer;
+  tenantId?: number|string;// 租户id
+}
+
+```
 ps：这里不建议大家添加swagger接口直接生成到开发项目中去，更建议大家结合`npm私服`的版本管理方式，否则每次更新将全部替换代码，让我们的前端代码变得不可控。同时也要求swagger文档字段定义清晰，不规范的文档将会有很多不可控的因素。
 
