@@ -71,7 +71,7 @@ program.option('-a, --add', 'add swagger api').on("option:add", function () {
             process.exit();
           }
           const packageJson = JSON.parse(data);
-          packageJson.name = '@swagger/' + apiname;
+          packageJson.name = apiname;
           packageJson.swaggerpath = url
           packageString = JSON.stringify(packageJson, null, 2);
           fs.writeFile(`./${apiname}/package.json`, packageString, "utf8", err => {
@@ -86,7 +86,7 @@ program.option('-a, --add', 'add swagger api').on("option:add", function () {
 
         const contentReadme = 
 `
-# @swagger/${apiname}
+# ${apiname}
 api地址：[swagger-doc](${swagger})\n
 `
           fs.readFile(`./${apiname}/README.md`, "utf8", (err, data) => {
