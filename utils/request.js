@@ -2,8 +2,8 @@
  * @Author: decong.li
  * @Date: 2022/03/05 18:16:11 Saturday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/03/05 19:28:37 Saturday
- * @FilePath: /vue-component-node/utils/request.js
+ * @LastEditTime: 2022/05/30 00:30:07 Monday
+ * @FilePath: /swagger-ts/utils/request.js
  */
 
 /**
@@ -18,8 +18,8 @@ exports.requestType = function (data) {
   if (data['delete']) {
     return '$delete'
   }
-  if (data['update']) {
-    return '$update'
+  if (data['put']) {
+    return '$put'
   }
   return '$post'
 }
@@ -31,5 +31,5 @@ exports.requestType = function (data) {
  * @returns 
  */
 exports.typeData = function (data) {
-  return data['post'] || data['delete'] || data['get'] || data['update'];
+  return data['post'] || data['delete'] || data['get'] || data['put'];
 }

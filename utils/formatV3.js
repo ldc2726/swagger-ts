@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/03/25 15:30:41 Friday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/05/29 12:42:25 Sunday
+ * @LastEditTime: 2022/05/30 00:47:30 Monday
  * @FilePath: /swagger-ts/utils/formatV3.js
  */
 exports.formatV3 = function (res) {
@@ -20,16 +20,17 @@ exports.formatV3 = function (res) {
       //   // }]
       // }
       // 处理响应结果
-      if(element.post&&element.post.requestBody){
-        element.post.parameters = [{
+      let elementData = element.post || element.delete|| element.put||  element.get
+      if(elementData&&elementData.requestBody){
+        elementData.parameters = [{
           "in": "body",
-          "name": element.post.operationId,
-          "description": element.post.operationId,
+          "name":elementData.operationId,
+          "description": elementData.operationId,
           "required": true,
-          "schema": element.post.requestBody['content']['application/json']['schema']
+          "schema": elementData.requestBody['content']['application/json']['schema']
         }]
       }
-      let elementData = element.post || element.delete|| element.update||  element.get
+      
       if(elementData.responses['200']['content']){
         elementData.responses['200']={
           schema:  elementData.responses['200']['content']['application/json']['schema']

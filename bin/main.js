@@ -94,7 +94,6 @@ api地址：[swagger-doc](${swagger})\n
               console.log(chalk.red(err));
               process.exit();
             }
-            console.log(typeof data)
             data = data.replace(/xxx/g,apiname)
             WriteFile(`./${apiname}/README.md`, contentReadme+data)
           })
@@ -252,7 +251,6 @@ function ResTree(itemData, resData, element, key, requestTypes, swaggerItem) {
     const properties = itemData['properties']
     result = properties.result || properties.data || 'any'
   }
-  
   let name = rename(element,key)
   const RequestData = formatRequestData(element,name)
   if (result && result.$ref) {
