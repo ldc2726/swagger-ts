@@ -7,7 +7,7 @@ const download = require("download-git-repo");
 const ora = require("ora");
 var exec = require('child_process').exec;
 const chalk = require("chalk");
-const { FormatJsonDom, filterAttribute, formatRequestData, formatRefName,formatInt64 } = require('../utils/format')
+const { FormatJsonDom, filterAttribute, formatRequestData, formatRefName,formatInt64,rename } = require('../utils/format')
 const { typeData, requestType } = require('../utils/request')
 const { initDom, InitHttpDom, WriteFile, mkdirs, apiInitDom, defineInitDom } = require('../utils/writeFs')
 const { formatV3 } = require('../utils/formatV3')
@@ -152,8 +152,10 @@ program.parse(process.argv);
 
 program.on("--help", function () {
   console.log("  Examples:");
-  console.log("");
-  console.log("    this is an example");
+  console.log("-a :添加一个新的swagger接口地址");
+  console.log("-a + :添加一个新的swagger接口地址并发布npm");
+  console.log("-u :更新swagger地址");
+  console.log("-u + :更新swagger地址并发布至npm");
   console.log("");
 });
 
@@ -181,7 +183,7 @@ async function getSwaggerJson(url, apiName) {
   for (const key in pathList) {
     if (Object.hasOwnProperty.call(pathList, key)) {
       const element = typeData(pathList[key])
-      QueryOneTree(resData, element, config)
+      QueryOneTree(resData, element, config, key)
       const data2 = {
         resData: resData,
         element: element,
@@ -193,7 +195,7 @@ async function getSwaggerJson(url, apiName) {
     }
   }
   // 写入文件
-  WriteFile(`./${config.name}index.ts`, `type integer = number\n` + config.typeDom)
+  WriteFile(`./${config.name}index.ts`, `type integer = number\ntype array =[]\n` + config.typeDom)
   WriteFile(`./${config.apiName}index.ts`, apiInitDom('index') + config.apiDom)
   loading.succeed("swagger api同步完成！");
   if(process.argv.includes('+')){
@@ -221,6 +223,7 @@ async function getSwaggerJson(url, apiName) {
 function ResOneTree(datas) {
   const { resData, element, key, requestTypes, swaggerItem } = datas
   if(!element['responses']['200']['schema']){
+    ResTree('', resData, element, key, requestTypes, swaggerItem)
     return;
   }
   const pathQueryData = element['responses']['200']['schema']['$ref'];
@@ -242,21 +245,27 @@ function ResOneTree(datas) {
  * @param {*} key 当前这一条接口URL
  */
 function ResTree(itemData, resData, element, key, requestTypes, swaggerItem) {
-  const properties = itemData['properties']
-  const result = properties.result
+  let result;
+  if(!itemData){
+    result = 'any'
+  } else {
+    const properties = itemData['properties']
+    result = properties.result || properties.data || 'any'
+  }
+  
+  let name = rename(element,key)
+  const RequestData = formatRequestData(element,name)
   if (result && result.$ref) {
     const resOneData = FormatJsonDom(resData, result.$ref)
     ResLoopTree(resData, resOneData, element, swaggerItem)
-    const RequestData = formatRequestData(element)
-    let httpreauestDom = InitHttpDom(element.operationId, RequestData ? RequestData : '', 'types.' + resOneData['title'], key, element.summary, requestTypes)
+    let httpreauestDom = InitHttpDom(name, RequestData ? RequestData : '', 'types.' + resOneData['title'], key, element.summary, requestTypes)
     swaggerItem.apiDom = swaggerItem.apiDom + httpreauestDom + '\n'
   } else {
     if (result.type == "array" && result.items.$ref) {
       const resOneData = FormatJsonDom(resData, result.items.$ref)
       ResLoopTree(resData, resOneData, element, swaggerItem)
     }
-    const RequestData = formatRequestData(element)
-    let httpreauestDom = InitHttpDom(element.operationId, RequestData ? RequestData : '', result.type == 'array' ? result.items.type || 'types.' + formatRefName(result) + '[]' : result.type || 'any', key, element.summary, requestTypes)
+    let httpreauestDom = InitHttpDom(name, RequestData ? RequestData : '',result=='any'?'any': (result.type == 'array' ? result.items.type || 'types.' + formatRefName(result) + '[]' : result.type || 'any'), key, element.summary, requestTypes)
     swaggerItem.apiDom = swaggerItem.apiDom + httpreauestDom + '\n'
   }
 }
@@ -310,7 +319,7 @@ function ResLoopTree(resData, properties, element, swaggerItem) {
  * @param {*} resData 
  * @param {*} element 
  */
-function QueryOneTree(resData, element, swaggerItem) {
+function QueryOneTree(resData, element, swaggerItem, key) {
   const pathQueryData = element['parameters'];
   if (pathQueryData) {
     const newArr2 = pathQueryData.filter((value) => {
@@ -328,7 +337,7 @@ function QueryOneTree(resData, element, swaggerItem) {
     // 如果是其他版本含有query参数的
     if (newArr.length != 0) {
       let initDomArr2;
-      let name = element.operationId.replace('-','')
+      let name = rename(element,key)
       name = name.substring(0,1).toLowerCase() + name.substring(1)
       initDomArr2 = initDom(name,name)
       newArr.map((item,i)=>{
@@ -407,5 +416,4 @@ function LoopTree(itemData, resData, element, swaggerItem, type=false) {
   } catch (error) {
     console.log('error-path', element, error)
   }
-  
 }

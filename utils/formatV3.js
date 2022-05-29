@@ -2,8 +2,8 @@
  * @Author: decong.li
  * @Date: 2022/03/25 15:30:41 Friday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/03/29 22:01:07 Tuesday
- * @FilePath: /vue-swagger-cmd/utils/formatV3.js
+ * @LastEditTime: 2022/05/29 12:42:25 Sunday
+ * @FilePath: /swagger-ts/utils/formatV3.js
  */
 exports.formatV3 = function (res) {
   for (const key in res.data.paths) {
@@ -30,8 +30,10 @@ exports.formatV3 = function (res) {
         }]
       }
       let elementData = element.post || element.delete|| element.update||  element.get
-      elementData.responses['200']={
-        schema:  elementData.responses['200']['content']['application/json']['schema']
+      if(elementData.responses['200']['content']){
+        elementData.responses['200']={
+          schema:  elementData.responses['200']['content']['application/json']['schema']
+        }
       }
     }
     //处理DTO
