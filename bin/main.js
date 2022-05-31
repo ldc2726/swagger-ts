@@ -151,10 +151,10 @@ program.parse(process.argv);
 
 program.on("--help", function () {
   console.log("  Examples:");
-  console.log("-a :添加一个新的swagger接口地址");
-  console.log("-a + :添加一个新的swagger接口地址并发布npm");
-  console.log("-u :更新swagger地址");
-  console.log("-u + :更新swagger地址并发布至npm");
+  console.log("-a :添加一个新的swagger接口地址并发布");
+  console.log("-a nopublish :添加一个新的swagger接口地址但不发布npm");
+  console.log("-u :更新swagger地址并发布至npm");
+  console.log("-u nopublish :仅更新swagger地址不发布");
   console.log("");
 });
 
@@ -163,7 +163,13 @@ async function getSwaggerJson(url, apiName) {
   axios.defaults.headers.common['Accept'] = 'application/json,*/*'
   axios.defaults.headers.common['Accept-Encoding'] = 'gzip, deflate'
   axios.defaults.headers.common['Accept-Language'] = 'zh-CN,zh;q=0.9,en;q=0.8'
-  let res = await axios.get(url)
+  let res;
+  try {
+    res = await axios.get(url)
+  } catch (error) {
+    loading.fail("网络异常，接口请求失败！");
+  }
+  
   const config = {
     name: apiName + '/swagger-utils/',
     apiName: apiName + '/swagger-api/',
@@ -197,7 +203,7 @@ async function getSwaggerJson(url, apiName) {
   WriteFile(`./${config.name}index.ts`, `type integer = number\ntype array =[]\n` + config.typeDom)
   WriteFile(`./${config.apiName}index.ts`, apiInitDom('index') + config.apiDom)
   loading.succeed("swagger api同步完成！");
-  if(process.argv.includes('+')){
+  if(!process.argv.includes('nopublish')){
     exec(`cd ${apiName} && npm publish`, function (error, stdout, stderr) {
       if (error) {
         loading.fail("发布失败！");
@@ -270,6 +276,10 @@ function ResTree(itemData, resData, element, key, requestTypes, swaggerItem) {
 function ResLoopTree(resData, properties, element, swaggerItem) {
   try {
     if (!properties['properties']) {
+      // 如果递归到最后一层，没有子属性且本身就是一个类型的话，并且没有定义过该名称
+      if(properties.type&&!swaggerItem.activeName.includes(properties.title)){
+        swaggerItem.typeDom = swaggerItem.typeDom + `type ${properties.title} = ${properties.type} \n`
+      }
       return;
     }
     const propertiesLength = Object.keys(properties['properties']).length;

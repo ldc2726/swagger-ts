@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/03/05 18:19:23 Saturday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/05/29 14:06:57 Sunday
+ * @LastEditTime: 2022/06/01 00:08:08 Wednesday
  * @FilePath: /swagger-ts/utils/format.js
  */
 
@@ -10,7 +10,8 @@
 exports.rename = function (element,key) {
   let name;
   if(element.operationId){
-    name = element.operationId
+    name = element.operationId.replace('-','')
+    name = name.substring(0,1).toLowerCase() + name.substring(1)
   } else {
     const keylist = key.split('/')
     name = keylist[keylist.length-2].substring(0,1).toLowerCase() + 

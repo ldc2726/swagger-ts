@@ -16,10 +16,10 @@ npm install swagger-ts-api -g
 
 ### 2. 跟随引导操作
 
-##### 在自己目录中执行添加命令(发布npm和不发布npm的区别就在于 + 符号)：
+##### 在自己目录中执行添加命令(发布npm和不发布npm的区别就在于 `nopublish` )：
 ```
-swagger-ts -a #添加新的swagger api
-swagger-ts -a + #添加新的swagger api 并发布到npm，请确保自己的npm已经登陆
+swagger-ts -a #添加新的swagger api 并发布到npm，请确保自己的npm已经登陆
+swagger-ts -a nopublish #添加新的swagger api，通常用于仅添加本地不采用npm管理版本
 
 ```
 
@@ -36,8 +36,8 @@ swagger-ts -a + #添加新的swagger api 并发布到npm，请确保自己的npm
 
 ##### 在自己目录中执行更新命令：
 ```
-swagger-ts -u #更新的swagger api
-swagger-ts -u + #更新的swagger api并发布到npm，请确保自己的npm已经登陆
+swagger-ts -u #更新的swagger api并发布到npm，请确保自己的npm已经登陆
+swagger-ts -u nopublish #仅更新的swagger api，通常用于本地不采用npm管理版本
 swagger-ts -h  #查看帮助
 ```
 
