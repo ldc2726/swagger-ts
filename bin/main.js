@@ -278,31 +278,31 @@ async function getSwaggerJson(url, apiName, version) {
   WriteFile(`./${config.name}index.ts`, `type integer = number\ntype array =[]\n` + config.typeDom)
   WriteFile(`./${config.apiName}index.ts`, apiInitDom('index') + config.apiDom)
   loading.succeed("swagger api同步完成！");
-  if(!process.argv.includes('nopublish')){
-    exec(`cd ${apiName} && npm publish`, function (error, stdout, stderr) {
-      if (error) {
-        loading.fail("发布失败！");
-        console.error(error);
-      }
-      else {
-        if(version){
-          newVsion = version
-        }
-        readFile('./config.json').then(res=>{
-          const config = JSON.parse(res)
-          if( config.type == "qywx" ){
-            qywxMsg(apiName.replace('./',''), newVsion, config.hook)
-          }
-          if( config.type == "feishu" ){
-            fsMsg(apiName.replace('./',''), newVsion, config.hook, config.token, config.email)
-          }
+  // if(!process.argv.includes('nopublish')){
+  //   exec(`cd ${apiName} && npm publish`, function (error, stdout, stderr) {
+  //     if (error) {
+  //       loading.fail("发布失败！");
+  //       console.error(error);
+  //     }
+  //     else {
+  //       if(version){
+  //         newVsion = version
+  //       }
+  //       readFile('./config.json').then(res=>{
+  //         const config = JSON.parse(res)
+  //         if( config.type == "qywx" ){
+  //           qywxMsg(apiName.replace('./',''), newVsion, config.hook)
+  //         }
+  //         if( config.type == "feishu" ){
+  //           fsMsg(apiName.replace('./',''), newVsion, config.hook, config.token, config.email)
+  //         }
 
-        })
-        // qywxMsg(`${apiname}/${fsname}`, )
-        loading.succeed(apiName+"，发布成功！版本："+newVsion);
-      }
-    });
-  }
+  //       })
+  //       // qywxMsg(`${apiname}/${fsname}`, )
+  //       loading.succeed(apiName+"，发布成功！版本："+newVsion);
+  //     }
+  //   });
+  // }
 }
 
 
@@ -367,7 +367,7 @@ function ResLoopTree(resData, properties, element, swaggerItem) {
     if (!properties['properties']) {
       // 如果递归到最后一层，没有子属性且本身就是一个类型的话，并且没有定义过该名称
       if(properties.type&&!activeName.includes(properties.title)){
-        swaggerItem.typeDom = swaggerItem.typeDom + `type ${properties.title} = ${properties.type} \n`
+        swaggerItem.typeDom = swaggerItem.typeDom + `export type ${properties.title} = ${properties.type} \n`
         activeName.push(properties.title)
       }
       return;
@@ -436,13 +436,12 @@ function QueryOneTree(resData, element, swaggerItem, key) {
     if (newArr.length != 0) {
       let initDomArr2;
       let name = rename(element,key)
-      name = name.substring(0,1).toLowerCase() + name.substring(1)
       initDomArr2 = initDom(name,name)
       newArr.map((item,i)=>{
         if(newArr.length == i+1){
-          initDomArr2 = initDomArr2.replace('##', `${item.name}?: ${item.schema.type?(item.schema.format=="int64"?"number|string":item.schema.type):item.name};// ${item.description}`)
+          initDomArr2 = initDomArr2.replace('##', `${item.name}?: ${item.schema.type?(item.schema.format=="int64"?"number|string":item.schema.type):item.name.substring(0,1).toUpperCase() + item.name.substring(1)};// ${item.description}`)
         } else {
-          initDomArr2 = initDomArr2.replace('##', `${item.name}?: ${item.schema.type?(item.schema.format=="int64"?"number|string":item.schema.type):item.name};// ${item.description}\n  ##`)
+          initDomArr2 = initDomArr2.replace('##', `${item.name}?: ${item.schema.type?(item.schema.format=="int64"?"number|string":item.schema.type):item.name.substring(0,1).toUpperCase() + item.name.substring(1)};// ${item.description}\n  ##`)
         }
         if(item.schema.$ref){
           LoopTree(item, resData, element, swaggerItem)

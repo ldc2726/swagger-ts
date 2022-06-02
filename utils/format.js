@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/03/05 18:19:23 Saturday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/06/01 00:08:08 Wednesday
+ * @LastEditTime: 2022/06/02 17:16:50 Thursday
  * @FilePath: /swagger-ts/utils/format.js
  */
 
@@ -11,10 +11,10 @@ exports.rename = function (element,key) {
   let name;
   if(element.operationId){
     name = element.operationId.replace('-','')
-    name = name.substring(0,1).toLowerCase() + name.substring(1)
+    name = name.substring(0,1).toUpperCase() + name.substring(1)
   } else {
     const keylist = key.split('/')
-    name = keylist[keylist.length-2].substring(0,1).toLowerCase() + 
+    name = keylist[keylist.length-2].substring(0,1).toUpperCase() + 
     keylist[keylist.length-2].substring(1) +
     keylist[keylist.length-1].substring(0,1).toUpperCase() +
     keylist[keylist.length-1].substring(1)
@@ -80,6 +80,7 @@ exports.formatRefName = function(name){
  */
 exports.formatInt64 = function(items,isRes=false){
   const format = items.format || items.items?.format || ''
+  let typeName = ''
   if(format == 'int64'){
     if(items.type == "array"){
       if(isRes){
@@ -96,7 +97,12 @@ exports.formatInt64 = function(items,isRes=false){
     if(items.items.type){
       return items.items.type + "[]"
     }
-    return items.items.$ref.split('/').pop().replace('«', '').replace('»', '')+'[]'
+    typeName = items.items.$ref.split('/').pop().replace('«', '').replace('»', '')
+    return typeName+'[]'
   }
-  return items.type || items.$ref.split('/').pop().replace('«', '').replace('»', '')
+  if(items.$ref){
+    typeName = items.$ref.split('/').pop().replace('«', '').replace('»', '')
+    return typeName
+  }
+  return items.type
 }
