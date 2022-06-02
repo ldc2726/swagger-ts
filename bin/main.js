@@ -278,31 +278,31 @@ async function getSwaggerJson(url, apiName, version) {
   WriteFile(`./${config.name}index.ts`, `type integer = number\ntype array =[]\n` + config.typeDom)
   WriteFile(`./${config.apiName}index.ts`, apiInitDom('index') + config.apiDom)
   loading.succeed("swagger api同步完成！");
-  // if(!process.argv.includes('nopublish')){
-  //   exec(`cd ${apiName} && npm publish`, function (error, stdout, stderr) {
-  //     if (error) {
-  //       loading.fail("发布失败！");
-  //       console.error(error);
-  //     }
-  //     else {
-  //       if(version){
-  //         newVsion = version
-  //       }
-  //       readFile('./config.json').then(res=>{
-  //         const config = JSON.parse(res)
-  //         if( config.type == "qywx" ){
-  //           qywxMsg(apiName.replace('./',''), newVsion, config.hook)
-  //         }
-  //         if( config.type == "feishu" ){
-  //           fsMsg(apiName.replace('./',''), newVsion, config.hook, config.token, config.email)
-  //         }
+  if(!process.argv.includes('nopublish')){
+    exec(`cd ${apiName} && npm publish`, function (error, stdout, stderr) {
+      if (error) {
+        loading.fail("发布失败！");
+        console.error(error);
+      }
+      else {
+        if(version){
+          newVsion = version
+        }
+        readFile('./config.json').then(res=>{
+          const config = JSON.parse(res)
+          if( config.type == "qywx" ){
+            qywxMsg(apiName.replace('./',''), newVsion, config.hook)
+          }
+          if( config.type == "feishu" ){
+            fsMsg(apiName.replace('./',''), newVsion, config.hook, config.token, config.email)
+          }
 
-  //       })
-  //       // qywxMsg(`${apiname}/${fsname}`, )
-  //       loading.succeed(apiName+"，发布成功！版本："+newVsion);
-  //     }
-  //   });
-  // }
+        })
+        // qywxMsg(`${apiname}/${fsname}`, )
+        loading.succeed(apiName+"，发布成功！版本："+newVsion);
+      }
+    });
+  }
 }
 
 
