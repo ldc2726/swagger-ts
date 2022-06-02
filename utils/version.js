@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/06/02 13:22:19 Thursday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/06/02 13:34:09 Thursday
+ * @LastEditTime: 2022/06/02 15:04:54 Thursday
  * @FilePath: /swagger-ts/utils/version.js
  */
 var fs = require('fs');
@@ -21,7 +21,7 @@ exports.versionUpdate = function(apiname,getSwaggerJson){
         list[i] = 0
       }
     })
-    newVsion = list[0] + '.' + list[1] + '.' + list[2]
+    let newVsion = list[0] + '.' + list[1] + '.' + list[2]
     packageJson.version = newVsion
     packageString = JSON.stringify(packageJson, null, 2);
     fs.writeFile(`./${apiname}/package.json`, packageString, "utf8", err => {
@@ -29,7 +29,7 @@ exports.versionUpdate = function(apiname,getSwaggerJson){
         console.log(chalk.red(err));
         process.exit();
       }
-      getSwaggerJson(packageJson.swaggerpath, apiname)
+      getSwaggerJson(packageJson.swaggerpath, apiname, newVsion)
     })
   })
 }

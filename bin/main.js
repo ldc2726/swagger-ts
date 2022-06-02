@@ -235,7 +235,7 @@ program.on("--help", function () {
 });
 
 // 执行请求
-async function getSwaggerJson(url, apiName) {
+async function getSwaggerJson(url, apiName, version) {
   axios.defaults.headers.common['Accept'] = 'application/json,*/*'
   axios.defaults.headers.common['Accept-Encoding'] = 'gzip, deflate'
   axios.defaults.headers.common['Accept-Language'] = 'zh-CN,zh;q=0.9,en;q=0.8'
@@ -285,13 +285,16 @@ async function getSwaggerJson(url, apiName) {
         console.error(error);
       }
       else {
+        if(version){
+          newVsion = version
+        }
         readFile('./config.json').then(res=>{
           const config = JSON.parse(res)
           if( config.type == "qywx" ){
-            qywxMsg(apiName, newVsion, config.hook)
+            qywxMsg(apiName.replace('./',''), newVsion, config.hook)
           }
           if( config.type == "feishu" ){
-            fsMsg(apiName, newVsion, config.hook, config.token, config.email)
+            fsMsg(apiName.replace('./',''), newVsion, config.hook, config.token, config.email)
           }
 
         })
