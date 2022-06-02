@@ -2,12 +2,14 @@
  * @Author: decong.li
  * @Date: 2022/03/05 18:17:51 Saturday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/04/01 13:04:20 Friday
- * @FilePath: /vue-swagger-cmd/utils/writeFs.js
+ * @LastEditTime: 2022/06/02 14:28:04 Thursday
+ * @FilePath: /swagger-ts/utils/writeFs.js
  */
 
 var fs = require('fs');
+const { promise } = require('ora');
 var path = require('path');
+const chalk = require("chalk");
 /**
  * 模板初始状态 
  * @param {*} name 名称
@@ -28,7 +30,6 @@ export interface ${name} {
 }
 
 exports.defineInitDom = function(name,type){
-  name = name.replace('«', '').replace('»', '')
   return `
 /**
 * ${name} --自定义类型
@@ -99,4 +100,17 @@ import * as types from './../swagger-utils/${path}'
 import { HttpRequest } from './../main'  \n
 type integer = number  \n
 `
+}
+
+//读取文件
+exports.readFile = function(url){
+  return new Promise((resolve,reject)=>{
+    fs.readFile(`${url}`, "utf8", (err, data) => {
+      if (err) {
+        reject(err)
+        console.log(chalk.red(err));
+      }
+      resolve(data)
+    })
+  })
 }

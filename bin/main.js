@@ -11,11 +11,14 @@ const { FormatJsonDom, filterAttribute, formatRequestData, formatRefName,formatI
 const { typeData, requestType } = require('../utils/request')
 const { initDom, InitHttpDom, WriteFile, mkdirs, apiInitDom, defineInitDom } = require('../utils/writeFs')
 const { formatV3 } = require('../utils/formatV3')
+const { versionUpdate } = require('../utils/version')
+const { readFile } = require("./../utils/writeFs")
+const { qywxMsg, fsMsg } = require("./../utils/msg")
 var fs = require('fs');
 const loading = ora("接口生成中，请稍后⋯⋯");
 let newVsion = '1.0.0'
 let gitUrl = "github:ldc2726/swagger-api-template"
-
+const activeName = []
 program.version("0.0.1")
 program.option("-i, --init [name]", "init a project", "myapp");
 program.option('-a, --add', 'add swagger api').on("option:add", function () {
@@ -118,33 +121,105 @@ program.option('-u, --update', 'update api and publish npm').on("option:update",
       }
     }];
     inquirer.prompt(promptList).then(({ apiname }) => {
-      fs.readFile(`./${apiname}/package.json`, "utf8", (err, data) => {
-        if (err) {
-          console.log(chalk.red(err));
-          process.exit();
-        }
-        const packageJson = JSON.parse(data);
-        const list = packageJson.version.split('.');
-        list[2]++
-        list.map((item, i) => {
-          if (item == 100) {
-            list[i - 1]++
-            list[i] = 0
+      if( apiname.includes('@')) {
+        fs.readdir(`./${apiname}`, 'utf-8', async function (err, res) {
+          if (err) {
+            console.log(err)
+            return;
           }
+          const promptLists = [{
+            type: 'list',
+            message: '请选择更新的api:',
+            name: 'apinames',
+            choices: res,
+            filter: function (val) {
+              return val
+            }
+          }];
+          inquirer.prompt(promptLists).then(({ apinames }) => {
+            versionUpdate(`./${apiname}/${apinames}`, getSwaggerJson)
+          })
         })
-        newVsion = list[0] + '.' + list[1] + '.' + list[2]
-        packageJson.version = newVsion
+        return;
+      }
+      versionUpdate(apiname, getSwaggerJson)
+    })
+
+  })
+})
+program.option('-s, --set', 'set global config').on("option:set", function () {
+  const list = [
+    "qywx",
+    "feishu"
+  ]
+  const promptList = [{
+    type: 'list',
+    message: '请选择通知服务:',
+    name: 'msgName',
+    choices: list,
+    filter: function (val) {
+      return val
+    }
+  },{
+    type: "input",
+    name: "hook",
+    message: "请输入hook的地址",
+    default: '',
+    filter: value => value.trim(),
+    validate: value => {
+      const validate = value.trim().split(" ").length === 1 && value.trim().indexOf('http') != -1;
+      return validate || "不合法，请输入正确的hook的地址";
+    },
+    transformer: value => `：${value}`
+  }]
+  const feishuList = [
+    {
+      type: "input",
+      name: "token",
+      message: "请输入token",
+      default: '',
+      filter: value => value.trim(),
+      transformer: value => `：${value}`
+    },{
+      type: "input",
+      name: "email",
+      message: "请输入飞书email地址",
+      default: '',
+      filter: value => value.trim(),
+      transformer: value => `：${value}`
+    }
+  ]
+  inquirer.prompt(promptList).then(({ msgName, hook }) => {
+    if(msgName=="feishu"){
+      inquirer.prompt(feishuList).then(({ token, email }) => {
+        const packageJson = {
+          "type": msgName,
+          "hook": hook,
+          "token": token,
+          "email": email
+        }
         packageString = JSON.stringify(packageJson, null, 2);
-        fs.writeFile(`./${apiname}/package.json`, packageString, "utf8", err => {
+        fs.writeFile(`./config.json`, packageString, "utf8", err => {
           if (err) {
             console.log(chalk.red(err));
             process.exit();
           }
-          getSwaggerJson(packageJson.swaggerpath, apiname)
         })
       })
-    })
-
+    }
+    if(msgName=="qywx"){
+      const packageJson = {
+        "type": msgName,
+        "hook": hook,
+      }
+      const packageString = JSON.stringify(packageJson, null, 2);
+      fs.writeFile(`./config.json`, packageString, "utf8", err => {
+        if (err) {
+          console.log(chalk.red(err));
+          process.exit();
+        }
+      })
+    }
   })
 })
 program.parse(process.argv);
@@ -155,6 +230,7 @@ program.on("--help", function () {
   console.log("-a nopublish :添加一个新的swagger接口地址但不发布npm");
   console.log("-u :更新swagger地址并发布至npm");
   console.log("-u nopublish :仅更新swagger地址不发布");
+  console.log("-s :配置通知服务");
   console.log("");
 });
 
@@ -173,7 +249,6 @@ async function getSwaggerJson(url, apiName) {
   const config = {
     name: apiName + '/swagger-utils/',
     apiName: apiName + '/swagger-api/',
-    activeName: [],
     typeDom: "",
     apiDom: ""
   }
@@ -210,6 +285,17 @@ async function getSwaggerJson(url, apiName) {
         console.error(error);
       }
       else {
+        readFile('./config.json').then(res=>{
+          const config = JSON.parse(res)
+          if( config.type == "qywx" ){
+            qywxMsg(apiName, newVsion, config.hook)
+          }
+          if( config.type == "feishu" ){
+            fsMsg(apiName, newVsion, config.hook, config.token, config.email)
+          }
+
+        })
+        // qywxMsg(`${apiname}/${fsname}`, )
         loading.succeed(apiName+"，发布成功！版本："+newVsion);
       }
     });
@@ -277,8 +363,9 @@ function ResLoopTree(resData, properties, element, swaggerItem) {
   try {
     if (!properties['properties']) {
       // 如果递归到最后一层，没有子属性且本身就是一个类型的话，并且没有定义过该名称
-      if(properties.type&&!swaggerItem.activeName.includes(properties.title)){
+      if(properties.type&&!activeName.includes(properties.title)){
         swaggerItem.typeDom = swaggerItem.typeDom + `type ${properties.title} = ${properties.type} \n`
+        activeName.push(properties.title)
       }
       return;
     }
@@ -311,10 +398,10 @@ function ResLoopTree(resData, properties, element, swaggerItem) {
         }
       }
     }
-    if (swaggerItem.activeName.includes(properties.title)) {
+    if (activeName.includes(properties.title)) {
       return;
     }
-    swaggerItem.activeName.push(properties.title)
+    activeName.push(properties.title)
     swaggerItem.typeDom = swaggerItem.typeDom + InitDom + '\n'
   } catch (error) {
     console.log('path-error:',resOneData)
@@ -358,10 +445,10 @@ function QueryOneTree(resData, element, swaggerItem, key) {
           LoopTree(item, resData, element, swaggerItem)
         }
       })
-      if (swaggerItem.activeName.includes(name)) {
+      if (activeName.includes(name)) {
         return;
       }
-      swaggerItem.activeName.push(name)
+      activeName.push(name)
       swaggerItem.typeDom = swaggerItem.typeDom + initDomArr2 + '\n'
     }
   }
@@ -383,6 +470,7 @@ function LoopTree(itemData, resData, element, swaggerItem, type=false) {
     name = name[name.length - 1]
     const childAllData = FormatJsonDom(resData, name2);
     const propertiesData = childAllData['properties'];
+    name = name.replace('«', '').replace('»', '')
     if(childAllData.type=="integer" || childAllData.type=="string"){
       initDomArr2 = defineInitDom(name,childAllData.format=="int64"?"number|string":childAllData.type)
     } else {
@@ -416,10 +504,10 @@ function LoopTree(itemData, resData, element, swaggerItem, type=false) {
         }
       }
     }
-    if (swaggerItem.activeName.includes(name)) {
+    if (activeName.includes(name)) {
       return;
     }
-    swaggerItem.activeName.push(name)
+    activeName.push(name)
     swaggerItem.typeDom = swaggerItem.typeDom + initDomArr2 + '\n'
   } catch (error) {
     console.log('error-path', element, error)
