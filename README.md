@@ -43,7 +43,7 @@ swagger-ts -h  #查看帮助
 
 ```
 # 效果：
-swagger-ts -u +
+swagger-ts -u 
 ? 请选择更新的api: test-api
 ✔ swagger api同步完成！
 ```
