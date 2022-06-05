@@ -7,7 +7,7 @@ const download = require("download-git-repo");
 const ora = require("ora");
 var exec = require('child_process').exec;
 const chalk = require("chalk");
-const { FormatJsonDom, filterAttribute, formatRequestData, formatRefName,formatInt64,rename } = require('../utils/format')
+const { FormatJsonDom, filterAttribute, formatRequestData, formatRefName,formatInt64,rename,formatGlobalName } = require('../utils/format')
 const { typeData, requestType } = require('../utils/request')
 const { initDom, InitHttpDom, WriteFile, mkdirs, apiInitDom, defineInitDom } = require('../utils/writeFs')
 const { formatV3 } = require('../utils/formatV3')
@@ -366,9 +366,10 @@ function ResLoopTree(resData, properties, element, swaggerItem) {
   try {
     if (!properties['properties']) {
       // 如果递归到最后一层，没有子属性且本身就是一个类型的话，并且没有定义过该名称
-      if(properties.type&&!activeName.includes(properties.title)){
-        swaggerItem.typeDom = swaggerItem.typeDom + `export type ${properties.title} = ${properties.type} \n`
-        activeName.push(properties.title)
+      const titleDto = formatGlobalName(properties.title)
+      if(properties.type&&!activeName.includes(titleDto)){
+        swaggerItem.typeDom = swaggerItem.typeDom + `export type ${titleDto} = ${properties.type} \n`
+        activeName.push(titleDto)
       }
       return;
     }
@@ -438,12 +439,16 @@ function QueryOneTree(resData, element, swaggerItem, key) {
       let name = rename(element,key)
       initDomArr2 = initDom(name,name)
       newArr.map((item,i)=>{
+        const type = item.type || item.schema.type
+        const format = item.format || item.schema?.format
+        const $ref = item.$ref||item.schema?.$ref
+
         if(newArr.length == i+1){
-          initDomArr2 = initDomArr2.replace('##', `${item.name}?: ${item.schema.type?(item.schema.format=="int64"?"number|string":item.schema.type):item.name.substring(0,1).toUpperCase() + item.name.substring(1)};// ${item.description}`)
+          initDomArr2 = initDomArr2.replace('##', `${item.name}?: ${type?(format=="int64"?"number|string":type):formatGlobalName(item.name)};// ${item.description}`)
         } else {
-          initDomArr2 = initDomArr2.replace('##', `${item.name}?: ${item.schema.type?(item.schema.format=="int64"?"number|string":item.schema.type):item.name.substring(0,1).toUpperCase() + item.name.substring(1)};// ${item.description}\n  ##`)
+          initDomArr2 = initDomArr2.replace('##', `${item.name}?: ${type?(format=="int64"?"number|string":type):formatGlobalName(item.name)};// ${item.description}\n  ##`)
         }
-        if(item.schema.$ref){
+        if($ref){
           LoopTree(item, resData, element, swaggerItem)
         }
       })
@@ -466,13 +471,16 @@ function QueryOneTree(resData, element, swaggerItem, key) {
 function LoopTree(itemData, resData, element, swaggerItem, type=false) {
   try {
     let initDomArr2;
-    let name = itemData.schema || itemData.items || itemData
-    let name2 = name.$ref
-    name = name2?.split('/')
+    let names = itemData.schema || itemData.items || itemData
+    let name2 = names.$ref || names.items.$ref
+    let name = name2?.split('/')
     name = name[name.length - 1]
     const childAllData = FormatJsonDom(resData, name2);
     const propertiesData = childAllData['properties'];
-    name = name.replace('«', '').replace('»', '')
+    if(!propertiesData){
+      return;
+    }
+    name = formatGlobalName(name)
     if(childAllData.type=="integer" || childAllData.type=="string"){
       initDomArr2 = defineInitDom(name,childAllData.format=="int64"?"number|string":childAllData.type)
     } else {
@@ -487,12 +495,13 @@ function LoopTree(itemData, resData, element, swaggerItem, type=false) {
           nums++
           
           // 如果还有继续递归 ts类型为 DTO[]
-          if (items.items && items.items.$ref) {
-            const urlname = items.items.$ref.split('/')
+          if (items.$ref || (items.items && items.items.$ref)) {
+            let urlname = items.$ref||items.items.$ref
+            urlname = urlname.split('/')
             if (numsetup == nums) {
-              initDomArr2 = initDomArr2.replace('##', `${i}?: ${urlname[urlname.length - 1]}${items.type=='array'?'[]':''};// ${items.description || filterAttribute(i, element['parameters'])?.description}`)
+              initDomArr2 = initDomArr2.replace('##', `${i}?: ${formatGlobalName(urlname[urlname.length - 1])}${items.type=='array'?'[]':''};// ${items.description || filterAttribute(i, element['parameters'])?.description}`)
             } else {
-              initDomArr2 = initDomArr2.replace('##', `${i}?: ${urlname[urlname.length - 1]}${items.type=='array'?'[]':''};// ${items.description || filterAttribute(i, element['parameters'])?.description}\n  ##`)
+              initDomArr2 = initDomArr2.replace('##', `${i}?: ${formatGlobalName(urlname[urlname.length - 1])}${items.type=='array'?'[]':''};// ${items.description || filterAttribute(i, element['parameters'])?.description}\n  ##`)
             }
             LoopTree(items, resData, element, swaggerItem,type)
           } else {

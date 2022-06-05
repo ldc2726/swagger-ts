@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/03/05 18:17:51 Saturday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/06/02 14:28:04 Thursday
+ * @LastEditTime: 2022/06/05 17:23:36 Sunday
  * @FilePath: /swagger-ts/utils/writeFs.js
  */
 
@@ -10,6 +10,7 @@ var fs = require('fs');
 const { promise } = require('ora');
 var path = require('path');
 const chalk = require("chalk");
+const { formatGlobalName } = require('./format')
 /**
  * 模板初始状态 
  * @param {*} name 名称
@@ -18,7 +19,7 @@ const chalk = require("chalk");
  */
 
 exports.initDom = function (name, dos) {
-  name = name.replace('«', '').replace('»', '')
+  name = formatGlobalName(name)
   return `
 /**
 * ${dos}
@@ -47,10 +48,8 @@ type ${name} = ${type}
  * @returns 
  */
 exports.InitHttpDom = function (name, reqData, resData, url, dos, method) {
-  name = name.replace('-','')
-  name = name.substring(0,1).toLowerCase() + name.substring(1)
-  reqData = reqData.replace('«', '').replace('»', '')
-  resData = resData.replace('«', '').replace('»', '')
+  name = formatGlobalName(name)
+  reqData = formatGlobalName(reqData)
   let isPath = false, newUrl = url
   if (url.indexOf('}') != -1) {
     isPath = true
