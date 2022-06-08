@@ -62,17 +62,20 @@ program.option('-a, --add', 'add swagger api').on("option:add", function () {
   ];
   inquirer.prompt(questions).then(({ url, swagger, apiname }) => {
     loading.start();
+    loading.info("模板下载中")
     download(gitUrl, `./${apiname}`,  function (err) {
       if (err) {
         loading.fail("下载失败！");
         console.log(chalk.red(err));
         process.exit();
       } else {
+        loading.info("模板下载完成，请求swagger.json")
         fs.readFile(`./${apiname}/package.json`, "utf8", (err, data) => {
           if (err) {
             console.log(chalk.red(err));
             process.exit();
           }
+          loading.info("swagger.json请求完毕，开始生成代码")
           const packageJson = JSON.parse(data);
           packageJson.name = apiname;
           packageJson.swaggerpath = url
@@ -351,7 +354,7 @@ function ResTree(itemData, resData, element, key, requestTypes, swaggerItem) {
   if (result && result.$ref) {
     const resOneData = FormatJsonDom(resData, result.$ref)
     ResLoopTree(resData, resOneData, element, swaggerItem)
-    let httpreauestDom = InitHttpDom(name, RequestData ? RequestData : '', 'types.' + resOneData['title'], key, element.summary, requestTypes)
+    let httpreauestDom = InitHttpDom(name, RequestData ? RequestData : '', 'types.' + formatGlobalName(resOneData['title']), key, element.summary, requestTypes)
     swaggerItem.apiDom = swaggerItem.apiDom + httpreauestDom + '\n'
   } else {
     if (result.type == "array" && result.items.$ref) {
@@ -384,20 +387,18 @@ function ResLoopTree(resData, properties, element, swaggerItem) {
           let nameRef = item.$ref?item.$ref:item.items.$ref,name;
           name = nameRef.split('/');
           name = name[name.length - 1]
+          InitDom = InitDom.replace('##', `\n  ${i}: ${formatInt64(item,true)};// ${item.description}##`)
           if (propertiesLength == nums) {
-            InitDom = InitDom.replace('##', `${i}: ${formatInt64(item,true)};// ${item.description}`)
-          } else {
-            InitDom = InitDom.replace('##', `${i}: ${formatInt64(item,true)};// ${item.description}\n  ##`)
+            InitDom = InitDom.replace('##', '')
           }
           if (properties.title != name) {
             const propertiesItem = FormatJsonDom(resData, nameRef)
             ResLoopTree(resData, propertiesItem, '', swaggerItem)
           }
         } else {
+          InitDom = InitDom.replace('##', `\n  ${i}: ${formatInt64(item,true)};// ${item.description}##`)
           if (propertiesLength == nums) {
-            InitDom = InitDom.replace('##', `${i}: ${formatInt64(item,true)};// ${item.description}`)
-          } else {
-            InitDom = InitDom.replace('##', `${i}: ${formatInt64(item,true)};// ${item.description}\n  ##`)
+            InitDom = InitDom.replace('##', '')
           }
         }
       }
@@ -442,11 +443,9 @@ function QueryOneTree(resData, element, swaggerItem, key) {
         const type = item.type || item.schema.type
         const format = item.format || item.schema?.format
         const $ref = item.$ref||item.schema?.$ref
-
+        initDomArr2 = initDomArr2.replace('##', `\n  ${item.name}?: ${type?(format=="int64"?"number|string":type):formatGlobalName(item.name)};// ${item.description}##`)
         if(newArr.length == i+1){
-          initDomArr2 = initDomArr2.replace('##', `${item.name}?: ${type?(format=="int64"?"number|string":type):formatGlobalName(item.name)};// ${item.description}`)
-        } else {
-          initDomArr2 = initDomArr2.replace('##', `${item.name}?: ${type?(format=="int64"?"number|string":type):formatGlobalName(item.name)};// ${item.description}\n  ##`)
+          initDomArr2 = initDomArr2.replace('##', '')
         }
         if($ref){
           LoopTree(item, resData, element, swaggerItem)
@@ -478,6 +477,11 @@ function LoopTree(itemData, resData, element, swaggerItem, type=false) {
     const childAllData = FormatJsonDom(resData, name2);
     const propertiesData = childAllData['properties'];
     if(!propertiesData){
+      const titleDto = formatGlobalName(childAllData.title)
+      if(childAllData.type&&!activeName.includes(titleDto)){
+        swaggerItem.typeDom = swaggerItem.typeDom + `export type ${titleDto} = ${childAllData.type} \n`
+        activeName.push(titleDto)
+      }
       return;
     }
     name = formatGlobalName(name)
@@ -498,19 +502,17 @@ function LoopTree(itemData, resData, element, swaggerItem, type=false) {
           if (items.$ref || (items.items && items.items.$ref)) {
             let urlname = items.$ref||items.items.$ref
             urlname = urlname.split('/')
+            initDomArr2 = initDomArr2.replace('##', `\n  ${i}?: ${formatGlobalName(urlname[urlname.length - 1])}${items.type=='array'?'[]':''};// ${items.description || filterAttribute(i, element['parameters'])?.description}##`)
             if (numsetup == nums) {
-              initDomArr2 = initDomArr2.replace('##', `${i}?: ${formatGlobalName(urlname[urlname.length - 1])}${items.type=='array'?'[]':''};// ${items.description || filterAttribute(i, element['parameters'])?.description}`)
-            } else {
-              initDomArr2 = initDomArr2.replace('##', `${i}?: ${formatGlobalName(urlname[urlname.length - 1])}${items.type=='array'?'[]':''};// ${items.description || filterAttribute(i, element['parameters'])?.description}\n  ##`)
-            }
+              initDomArr2 = initDomArr2.replace('##', '')
+            } 
             LoopTree(items, resData, element, swaggerItem,type)
           } else {
             // 持续写入
+            initDomArr2 = initDomArr2.replace('##', `\n  ${i}?: ${formatInt64(items)};// ${items.description || filterAttribute(i, element['parameters'])?.description}## `)
             if (numsetup == nums) {
-              initDomArr2 = initDomArr2.replace('##', `${i}?: ${formatInt64(items)};// ${items.description || filterAttribute(i, element['parameters'])?.description}`)
-            } else {
-              initDomArr2 = initDomArr2.replace('##', `${i}?: ${formatInt64(items)};// ${items.description || filterAttribute(i, element['parameters'])?.description}\n  ## `)
-            }
+              initDomArr2 = initDomArr2.replace('##', '')
+            } 
           }
         }
       }

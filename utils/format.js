@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/03/05 18:19:23 Saturday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/06/05 18:52:54 Sunday
+ * @LastEditTime: 2022/06/07 19:10:02 Tuesday
  * @FilePath: /swagger-ts/utils/format.js
  */
 
@@ -95,7 +95,7 @@ exports.formatInt64 = function(items,isRes=false){
   if(format == 'int64'){
     if(items.type == "array"){
       if(isRes){
-        return 'number'
+        return 'number[]'
       }
       return "number[]|string[]" 
     }

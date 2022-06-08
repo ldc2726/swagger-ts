@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/03/05 18:17:51 Saturday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/06/05 17:23:36 Sunday
+ * @LastEditTime: 2022/06/06 15:54:38 Monday
  * @FilePath: /swagger-ts/utils/writeFs.js
  */
 
@@ -24,8 +24,7 @@ exports.initDom = function (name, dos) {
 /**
 * ${dos}
 */
-export interface ${name} {
-  ##
+export interface ${name} {##
 }
 `
 }
