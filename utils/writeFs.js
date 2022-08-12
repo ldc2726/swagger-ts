@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/03/05 18:17:51 Saturday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/06/06 15:54:38 Monday
+ * @LastEditTime: 2022/08/12 16:13:04 Friday
  * @FilePath: /swagger-ts/utils/writeFs.js
  */
 
@@ -48,13 +48,19 @@ type ${name} = ${type}
  */
 exports.InitHttpDom = function (name, reqData, resData, url, dos, method) {
   name = formatGlobalName(name)
-  reqData = formatGlobalName(reqData)
+  reqData = formatGlobalName(reqData)||''
   let isPath = false, newUrl = url
   if (url.indexOf('}') != -1) {
     isPath = true
     newUrl = url.replace(/\{[^\)]*\}/g, "")
   }
-  reqData = reqData?'data: types.' + reqData:''
+  if(reqData){
+    if(reqData=='Any'){
+      reqData = 'data: any'
+    }else{
+      reqData = 'data: types.' + reqData
+    }
+  }
   return `
 /**
  * ${dos}

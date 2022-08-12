@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/03/05 18:19:23 Saturday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/06/07 19:10:02 Tuesday
+ * @LastEditTime: 2022/08/12 16:13:54 Friday
  * @FilePath: /swagger-ts/utils/format.js
  */
 
@@ -54,12 +54,17 @@ exports.formatRequestData = function(element,name){
     let arr2 = element.parameters.filter((value) => {
       return value.in == "query"
     })
-    if(arr.length>0){
-      arr = arr[0]['schema']?.items || arr[0]['schema']
-      arr = arr['$ref'].split('/')
-      let requestData = arr[arr.length-1]
-      return requestData
+    try {
+      if(arr.length>0){
+        arr = arr[0]['schema']?.items || arr[0]['schema']
+        arr = arr['$ref'].split('/')
+        let requestData = arr[arr.length-1]
+        return requestData
+      }
+    } catch (error) {
+      return 'any'
     }
+    
     if(arr2.length>0){
       return name
     }

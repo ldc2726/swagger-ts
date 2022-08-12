@@ -329,7 +329,7 @@ function ResOneTree(datas) {
     try {
       ResTree(itemData, resData, element, key, requestTypes, swaggerItem)
     } catch (error) {
-      console.log(error,'path:',key)
+      console.log(error,'该路径解析错误path:',key)
     }
   }
 }
@@ -409,7 +409,7 @@ function ResLoopTree(resData, properties, element, swaggerItem) {
     activeName.push(properties.title)
     swaggerItem.typeDom = swaggerItem.typeDom + InitDom + '\n'
   } catch (error) {
-    console.log('path-error:',resOneData)
+    console.log('错误的文件结构，请检查swagger该项:',element)
   }
   
 }
@@ -471,7 +471,10 @@ function LoopTree(itemData, resData, element, swaggerItem, type=false) {
   try {
     let initDomArr2;
     let names = itemData.schema || itemData.items || itemData
-    let name2 = names.$ref || names.items.$ref
+    let name2 = names?.$ref || names?.items?.$ref || null
+    if(!name2){
+      return;
+    }
     let name = name2?.split('/')
     name = name[name.length - 1]
     const childAllData = FormatJsonDom(resData, name2);
@@ -497,7 +500,6 @@ function LoopTree(itemData, resData, element, swaggerItem, type=false) {
         if (Object.hasOwnProperty.call(propertiesData, i)) {
           const items = propertiesData[i];
           nums++
-          
           // 如果还有继续递归 ts类型为 DTO[]
           if (items.$ref || (items.items && items.items.$ref)) {
             let urlname = items.$ref||items.items.$ref
@@ -523,6 +525,6 @@ function LoopTree(itemData, resData, element, swaggerItem, type=false) {
     activeName.push(name)
     swaggerItem.typeDom = swaggerItem.typeDom + initDomArr2 + '\n'
   } catch (error) {
-    console.log('error-path', element, error)
+    console.log('该项结构混乱', element, error)
   }
 }
