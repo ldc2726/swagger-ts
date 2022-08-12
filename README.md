@@ -1,5 +1,7 @@
 # yh-swagger-ts
 当前端web项目中应用了ts，我们不可能对成千上百的接口进行 `interface`的类型定义,那样效率是极低的，但是我们又需要ts智能友好的提示信息，该怎么办？这是我们必须要面对的问题。
+## OSCS
+[![OSCS Status](https://www.oscs1024.com/platform/badge/ldc2726/swagger-ts.svg?size=large)](https://www.oscs1024.com/project/ldc2726/swagger-ts?ref=badge_large)
 
 ⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️开源不易，麻烦大家点个star，谢谢⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️
 
@@ -118,4 +120,6 @@ export interface GeoAddressVo {
 `/api/v1/abccodereport/getgoodnames` => `abccodereportGetgoodnames`
 
 ⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️开源不易，麻烦大家点个star，谢谢⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️
+
+
 
