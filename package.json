@@ -1,5 +1,5 @@
 {
-  "name": "yh-swagger-ts",
+  "name": "swagger-ts-api",
   "version": "1.2.6",
   "description": "This is a swagger to TS request file plugin that can help us improve development efficiency even more.",
   "main": "index.js",
