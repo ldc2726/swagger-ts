@@ -1,4 +1,4 @@
-# yh-swagger-ts
+# swagger-ts-api
 当前端web项目中应用了ts，我们不可能对成千上百的接口进行 `interface`的类型定义,那样效率是极低的，但是我们又需要ts智能友好的提示信息，该怎么办？这是我们必须要面对的问题。
 ## 介绍
 根据`swagger.json`地址迅速生成ts接口，以及相关请求响应参的`interface`模块命令行工具。且支持swagger的V1和V2版本。该插件的宗旨是利用swagger接口文档让前端的效率变得更高，接口的请求参、响应参以及接口命名将不在需要手动引入，让前端更聚焦在业务功能的开发，接口将全面与swagger进行同步。
@@ -10,7 +10,7 @@
 ### 1. 安装
 
 ```
-npm install yh-swagger-ts -g
+npm install swagger-ts-api -g
 ```
 
 ### 2. 跟随引导操作
