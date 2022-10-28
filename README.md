@@ -10,7 +10,7 @@
 ### 1. 安装
 
 ```
-npm install swagger-ts-api -g
+npm install swagger-ts-api -g 
 ```
 
 ### 2. 跟随引导操作
