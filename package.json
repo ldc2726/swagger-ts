@@ -16,7 +16,8 @@
   "keywords": [
     "swagger",
     "ts",
-    "vue3"
+    "vue3",
+    "react"
   ],
   "dependencies": {
     "axios": "^0.26.0",
