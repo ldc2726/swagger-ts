@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/06/02 13:22:19 Thursday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/06/02 15:04:54 Thursday
+ * @LastEditTime: 2023/04/14 16:25:15 Friday
  * @FilePath: /swagger-ts/utils/version.js
  */
 var fs = require('fs');
@@ -32,4 +32,23 @@ exports.versionUpdate = function(apiname,getSwaggerJson){
       getSwaggerJson(packageJson.swaggerpath, apiname, newVsion)
     })
   })
+}
+
+exports.compareVersions = function(version1, version2='3.0.0') {
+  const arr1 = version1.split('.');
+  const arr2 = version2.split('.');
+  const len = Math.max(arr1.length, arr2.length);
+  
+  for (let i = 0; i < len; i++) {
+    const n1 = parseInt(arr1[i] || 0);
+    const n2 = parseInt(arr2[i] || 0);
+    
+    if (n1 > n2) {
+      return 1;
+    } else if (n1 < n2) {
+      return -1;
+    }
+  }
+  
+  return 0;
 }

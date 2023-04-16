@@ -7,19 +7,21 @@ const download = require("download-git-repo");
 const ora = require("ora");
 var exec = require('child_process').exec;
 const chalk = require("chalk");
-const { FormatJsonDom, filterAttribute, formatRequestData, formatRefName,formatInt64,rename,formatGlobalName } = require('../utils/format')
+const { FormatJsonDom, filterAttribute, formatRequestData, formatRefName, formatInt64, rename, formatGlobalName } = require('../utils/format')
 const { typeData, requestType } = require('../utils/request')
 const { initDom, InitHttpDom, WriteFile, mkdirs, apiInitDom, defineInitDom } = require('../utils/writeFs')
-const { formatV3 } = require('../utils/formatV3')
-const { versionUpdate } = require('../utils/version')
+const { formatV3, findValue } = require('../utils/formatV3')
+const { versionUpdate, compareVersions } = require('../utils/version')
 const { readFile } = require("./../utils/writeFs")
 const { qywxMsg, fsMsg } = require("./../utils/msg")
+const packageJson = require('./../package.json')
 var fs = require('fs');
 const loading = ora("接口生成中，请稍后⋯⋯");
 let newVsion = '1.0.0'
 let gitUrl = "github:ldc2726/swagger-api-template"
 const activeName = []
-program.version("0.0.1")
+let isV3 = false
+program.version(packageJson.version)
 program.option("-i, --init [name]", "init a project", "myapp");
 program.option('-a, --add', 'add swagger api').on("option:add", function () {
   const questions = [
@@ -32,6 +34,18 @@ program.option('-a, --add', 'add swagger api').on("option:add", function () {
       validate: value => {
         const validate = value.trim().split(" ").length === 1 && value.trim().indexOf('http') != -1;
         return validate || "不合法，请输入正确的http/https swagger.json 地址";
+      },
+      transformer: value => `：${value}`
+    },
+    {
+      type: "input",
+      name: "version",
+      message: "请输入swagger的版本",
+      default: '3.0.0',
+      filter: value => value.trim(),
+      validate: value => {
+        const validate = value.trim().indexOf('.') != -1;
+        return validate || "不合法，请输入正确的版本";
       },
       transformer: value => `：${value}`
     },
@@ -60,10 +74,10 @@ program.option('-a, --add', 'add swagger api').on("option:add", function () {
       transformer: value => `：${value}`
     }
   ];
-  inquirer.prompt(questions).then(({ url, swagger, apiname }) => {
+  inquirer.prompt(questions).then(({ url, version, swagger, apiname }) => {
     loading.start();
     loading.info("模板下载中")
-    download(gitUrl, `./${apiname}`,  function (err) {
+    download(gitUrl, `./${apiname}`, function (err) {
       if (err) {
         loading.fail("下载失败！");
         console.log(chalk.red(err));
@@ -85,24 +99,24 @@ program.option('-a, --add', 'add swagger api').on("option:add", function () {
               console.log(chalk.red(err));
               process.exit();
             }
-            getSwaggerJson(url, apiname)
+            getSwaggerJson(url, apiname, version)
           })
-          
+
         })
 
-        const contentReadme = 
-`
+        const contentReadme =
+          `
 # ${apiname}
 api地址：[swagger-doc](${swagger})\n
 `
-          fs.readFile(`./${apiname}/README.md`, "utf8", (err, data) => {
-            if (err) {
-              console.log(chalk.red(err));
-              process.exit();
-            }
-            data = data.replace(/xxx/g,apiname)
-            WriteFile(`./${apiname}/README.md`, contentReadme+data)
-          })
+        fs.readFile(`./${apiname}/README.md`, "utf8", (err, data) => {
+          if (err) {
+            console.log(chalk.red(err));
+            process.exit();
+          }
+          data = data.replace(/xxx/g, apiname)
+          WriteFile(`./${apiname}/README.md`, contentReadme + data)
+        })
       }
     })
   })
@@ -124,7 +138,7 @@ program.option('-u, --update', 'update api and publish npm').on("option:update",
       }
     }];
     inquirer.prompt(promptList).then(({ apiname }) => {
-      if( apiname.includes('@')) {
+      if (apiname.includes('@')) {
         fs.readdir(`./${apiname}`, 'utf-8', async function (err, res) {
           if (err) {
             console.log(err)
@@ -163,7 +177,7 @@ program.option('-s, --set', 'set global config').on("option:set", function () {
     filter: function (val) {
       return val
     }
-  },{
+  }, {
     type: "input",
     name: "hook",
     message: "请输入hook的地址",
@@ -183,7 +197,7 @@ program.option('-s, --set', 'set global config').on("option:set", function () {
       default: '',
       filter: value => value.trim(),
       transformer: value => `：${value}`
-    },{
+    }, {
       type: "input",
       name: "email",
       message: "请输入飞书email地址",
@@ -193,7 +207,7 @@ program.option('-s, --set', 'set global config').on("option:set", function () {
     }
   ]
   inquirer.prompt(promptList).then(({ msgName, hook }) => {
-    if(msgName=="feishu"){
+    if (msgName == "feishu") {
       inquirer.prompt(feishuList).then(({ token, email }) => {
         const packageJson = {
           "type": msgName,
@@ -210,7 +224,7 @@ program.option('-s, --set', 'set global config').on("option:set", function () {
         })
       })
     }
-    if(msgName=="qywx"){
+    if (msgName == "qywx") {
       const packageJson = {
         "type": msgName,
         "hook": hook,
@@ -248,7 +262,7 @@ async function getSwaggerJson(url, apiName, version) {
   } catch (error) {
     loading.fail("网络异常，接口请求失败！");
   }
-  
+
   const config = {
     name: apiName + '/swagger-utils/',
     apiName: apiName + '/swagger-api/',
@@ -257,9 +271,11 @@ async function getSwaggerJson(url, apiName, version) {
   }
   await mkdirs(apiName + '/swagger-utils')
   await mkdirs(apiName + '/swagger-api')
-  if(url.indexOf('json')!=-1){
+  if (compareVersions(version) >= 0) {
     res = formatV3(res)
+    isV3 = true
   }
+
   const resData = res.data
   const pathList = res.data.paths;
 
@@ -278,31 +294,31 @@ async function getSwaggerJson(url, apiName, version) {
     }
   }
   // 写入文件
-  WriteFile(`./${config.name}index.ts`, `type integer = number\ntype array =[]\n` + config.typeDom)
+  WriteFile(`./${config.name}index.ts`, `type integer = number\ntype array =[]\ntype ref=any\n` + config.typeDom)
   WriteFile(`./${config.apiName}index.ts`, apiInitDom('index') + config.apiDom)
   loading.succeed("swagger api同步完成！");
-  if(!process.argv.includes('nopublish')){
+  if (!process.argv.includes('nopublish')) {
     exec(`cd ${apiName} && npm publish`, function (error, stdout, stderr) {
       if (error) {
         loading.fail("发布失败！");
         console.error(error);
       }
       else {
-        if(version){
+        if (version) {
           newVsion = version
         }
-        readFile('./config.json').then(res=>{
+        readFile('./config.json').then(res => {
           const config = JSON.parse(res)
-          if( config.type == "qywx" ){
-            qywxMsg(apiName.replace('./',''), newVsion, config.hook)
+          if (config.type == "qywx") {
+            qywxMsg(apiName.replace('./', ''), newVsion, config.hook)
           }
-          if( config.type == "feishu" ){
-            fsMsg(apiName.replace('./',''), newVsion, config.hook, config.token, config.email)
+          if (config.type == "feishu") {
+            fsMsg(apiName.replace('./', ''), newVsion, config.hook, config.token, config.email)
           }
 
         })
         // qywxMsg(`${apiname}/${fsname}`, )
-        loading.succeed(apiName+"，发布成功！版本："+newVsion);
+        loading.succeed(apiName + "，发布成功！版本：" + newVsion);
       }
     });
   }
@@ -319,17 +335,21 @@ async function getSwaggerJson(url, apiName, version) {
    */
 function ResOneTree(datas) {
   const { resData, element, key, requestTypes, swaggerItem } = datas
-  if(!element['responses']['200']['schema']){
+  if (isV3) {
+    ResV3Tree(datas)
+    return
+  }
+  if (!findValue(element['responses'], 'properties')) {
     ResTree('', resData, element, key, requestTypes, swaggerItem)
     return;
   }
-  const pathQueryData = element['responses']['200']['schema']['$ref'];
+  const pathQueryData = findValue(element['responses'], '$ref')
   if (pathQueryData) {
     const itemData = FormatJsonDom(resData, pathQueryData) // 根据ref快速定位到JSON
     try {
       ResTree(itemData, resData, element, key, requestTypes, swaggerItem)
     } catch (error) {
-      console.log(error,'该路径解析错误path:',key)
+      console.log(error, '该路径解析错误path:', key)
     }
   }
 }
@@ -342,14 +362,14 @@ function ResOneTree(datas) {
  * @param {*} key 当前这一条接口URL
  */
 function ResTree(itemData, resData, element, key, requestTypes, swaggerItem) {
-  let result;
-  if(!itemData){
+  let result, properties;
+  if (!itemData) {
     result = 'any'
   } else {
-    const properties = itemData['properties']
+    properties = itemData['properties']
     result = properties.result || properties.data || 'any'
   }
-  let name = rename(element,key)
+  let name = rename(element, key)
   const RequestData = formatRequestData(element,name)
   if (result && result.$ref) {
     const resOneData = FormatJsonDom(resData, result.$ref)
@@ -361,7 +381,15 @@ function ResTree(itemData, resData, element, key, requestTypes, swaggerItem) {
       const resOneData = FormatJsonDom(resData, result.items.$ref)
       ResLoopTree(resData, resOneData, element, swaggerItem)
     }
-    let httpreauestDom = InitHttpDom(name, RequestData ? RequestData : '',result=='any'?'any': (result.type == 'array' ? result.items.type || 'types.' + formatRefName(result) + '[]' : result.type || 'any'), key, element.summary, requestTypes)
+    let httpreauestDom = InitHttpDom(name,
+      RequestData ? RequestData : '',
+      result == 'any' ? 'any' :
+        (result.type == 'array' ?
+          result.items.type ||
+          'types.' + formatRefName(result) + '[]' : result.type || 'any'),
+      key,
+      element.summary,
+      requestTypes)
     swaggerItem.apiDom = swaggerItem.apiDom + httpreauestDom + '\n'
   }
 }
@@ -370,7 +398,7 @@ function ResLoopTree(resData, properties, element, swaggerItem) {
     if (!properties['properties']) {
       // 如果递归到最后一层，没有子属性且本身就是一个类型的话，并且没有定义过该名称
       const titleDto = formatGlobalName(properties.title)
-      if(properties.type&&!activeName.includes(titleDto)){
+      if (properties.type && !activeName.includes(titleDto)) {
         swaggerItem.typeDom = swaggerItem.typeDom + `export type ${titleDto} = ${properties.type} \n`
         activeName.push(titleDto)
       }
@@ -383,11 +411,11 @@ function ResLoopTree(resData, properties, element, swaggerItem) {
       nums++
       if (Object.hasOwnProperty.call(properties['properties'], i)) {
         const item = properties['properties'][i];
-        if ((item.items && item.items.$ref)||item.$ref) {
-          let nameRef = item.$ref?item.$ref:item.items.$ref,name;
+        if ((item.items && item.items.$ref) || item.$ref) {
+          let nameRef = item.$ref ? item.$ref : item.items.$ref, name;
           name = nameRef.split('/');
           name = name[name.length - 1]
-          InitDom = InitDom.replace('##', `\n  ${i}: ${formatInt64(item,true)};// ${item.description}##`)
+          InitDom = InitDom.replace('##', `\n  ${i}: ${formatInt64(item, true)};// ${item.description}##`)
           if (propertiesLength == nums) {
             InitDom = InitDom.replace('##', '')
           }
@@ -396,7 +424,7 @@ function ResLoopTree(resData, properties, element, swaggerItem) {
             ResLoopTree(resData, propertiesItem, '', swaggerItem)
           }
         } else {
-          InitDom = InitDom.replace('##', `\n  ${i}: ${formatInt64(item,true)};// ${item.description}##`)
+          InitDom = InitDom.replace('##', `\n  ${i}: ${formatInt64(item, true)};// ${item.description}##`)
           if (propertiesLength == nums) {
             InitDom = InitDom.replace('##', '')
           }
@@ -409,9 +437,57 @@ function ResLoopTree(resData, properties, element, swaggerItem) {
     activeName.push(properties.title)
     swaggerItem.typeDom = swaggerItem.typeDom + InitDom + '\n'
   } catch (error) {
-    console.log('错误的文件结构，请检查swagger该项:',element)
+    console.log('错误的文件结构，请检查swagger该项:', element)
   }
-  
+
+}
+function ResV3Tree(datas) {//初始化接口和类型定义
+  const { resData, element, key, requestTypes, swaggerItem } = datas
+  let name = rename(element, key)
+  const docs = findValue(element, 'summary') || findValue(element, 'operationId')
+  const properties = findValue(element['responses'], 'properties')
+  if (properties) {
+    ResLoopV3Tree(name,docs,properties['data'], resData,swaggerItem)
+  }
+  const RequestData = formatRequestData(element,name)
+  const types = properties['data']['type']
+  let httpreauestDom = InitHttpDom(
+    name,
+    RequestData ? RequestData : '',
+    types == 'array' ? `types.${name}Res[]` : (
+      types==undefined?`types.${name}Res`:'any'
+    ),
+    key,
+    element.summary,
+    requestTypes
+  )
+  swaggerItem.apiDom = swaggerItem.apiDom + httpreauestDom + '\n'
+}
+function ResLoopV3Tree(name,docs,items, resData,swaggerItem) {// 循环写入属性类型
+  let InitDom = initDom(name + 'Res', docs)
+  let nums = 0;
+  if (findValue(items,'$ref')) {
+    const data = FormatJsonDom(resData, findValue(items,'$ref'))
+    Object.keys(data['properties']).map(item => {
+      nums++
+      const types = formatInt64(data['properties'][item], true)
+      if(findValue(data['properties'][item],'$ref')){
+        InitDom = InitDom.replace('##', `\n  ${item}: ${types}Res;// ${item.description?.replace(/\n/g,'')}##`)
+        ResLoopV3Tree(types,types,data['properties'][item],resData,swaggerItem)
+      }else {
+        InitDom = InitDom.replace('##', `\n  ${item}: ${types};// ${item.description?.replace(/\n/g,'')}##`)
+      }
+      if (Object.keys(data['properties']).length == nums) {
+        InitDom = InitDom.replace('##', '')
+        if (activeName.includes(name+'Res')) {
+          return;
+        }
+        activeName.push(name+'Res')
+        swaggerItem.typeDom = swaggerItem.typeDom + InitDom + '\n'
+      }
+    })
+
+  }
 }
 
 /**
@@ -437,17 +513,17 @@ function QueryOneTree(resData, element, swaggerItem, key) {
     // 如果是其他版本含有query参数的
     if (newArr.length != 0) {
       let initDomArr2;
-      let name = rename(element,key)
-      initDomArr2 = initDom(name,name)
-      newArr.map((item,i)=>{
+      let name = rename(element, key)
+      initDomArr2 = initDom(name, name)
+      newArr.map((item, i) => {
         const type = item.type || item.schema.type
         const format = item.format || item.schema?.format
-        const $ref = item.$ref||item.schema?.$ref
-        initDomArr2 = initDomArr2.replace('##', `\n  ${item.name}?: ${type?(format=="int64"?"number|string":type):formatGlobalName(item.name)};// ${item.description}##`)
-        if(newArr.length == i+1){
+        const $ref = item.$ref || item.schema?.$ref
+        initDomArr2 = initDomArr2.replace('##', `\n  ${item.name}?: ${type ? (format == "int64" ? "number|string" : type) : formatGlobalName(item.name)};// ${item.description?.replace(/\n/g,'')}##`)
+        if (newArr.length == i + 1) {
           initDomArr2 = initDomArr2.replace('##', '')
         }
-        if($ref){
+        if ($ref) {
           LoopTree(item, resData, element, swaggerItem)
         }
       })
@@ -457,6 +533,8 @@ function QueryOneTree(resData, element, swaggerItem, key) {
       activeName.push(name)
       swaggerItem.typeDom = swaggerItem.typeDom + initDomArr2 + '\n'
     }
+  } else {
+    // console.log('格式解析可能缺失')
   }
 
 }
@@ -467,31 +545,31 @@ function QueryOneTree(resData, element, swaggerItem, key) {
  * @param {*} resData 全部的json数据，用来匹配
  * @param {*} element 当前这条数据，含path等
  */
-function LoopTree(itemData, resData, element, swaggerItem, type=false) {
+function LoopTree(itemData, resData, element, swaggerItem, type = false) {
   try {
     let initDomArr2;
     let names = itemData.schema || itemData.items || itemData
     let name2 = names?.$ref || names?.items?.$ref || null
-    if(!name2){
+    if (!name2) {
       return;
     }
     let name = name2?.split('/')
     name = name[name.length - 1]
     const childAllData = FormatJsonDom(resData, name2);
     const propertiesData = childAllData['properties'];
-    if(!propertiesData){
+    if (!propertiesData) {
       const titleDto = formatGlobalName(childAllData.title)
-      if(childAllData.type&&!activeName.includes(titleDto)){
+      if (childAllData.type && !activeName.includes(titleDto)) {
         swaggerItem.typeDom = swaggerItem.typeDom + `export type ${titleDto} = ${childAllData.type} \n`
         activeName.push(titleDto)
       }
       return;
     }
     name = formatGlobalName(name)
-    if(childAllData.type=="integer" || childAllData.type=="string"){
-      initDomArr2 = defineInitDom(name,childAllData.format=="int64"?"number|string":childAllData.type)
+    if (childAllData.type == "integer" || childAllData.type == "string") {
+      initDomArr2 = defineInitDom(name, childAllData.format == "int64" ? "number|string" : childAllData.type)
     } else {
-      if(!type){
+      if (!type) {
         initDomArr2 = initDom(name, element?.summary || itemData.summary || itemData.description || name)
       }
       const numsetup = Object.keys(propertiesData).length
@@ -502,19 +580,19 @@ function LoopTree(itemData, resData, element, swaggerItem, type=false) {
           nums++
           // 如果还有继续递归 ts类型为 DTO[]
           if (items.$ref || (items.items && items.items.$ref)) {
-            let urlname = items.$ref||items.items.$ref
+            let urlname = items.$ref || items.items.$ref
             urlname = urlname.split('/')
-            initDomArr2 = initDomArr2.replace('##', `\n  ${i}?: ${formatGlobalName(urlname[urlname.length - 1])}${items.type=='array'?'[]':''};// ${items.description || filterAttribute(i, element['parameters'])?.description}##`)
+            initDomArr2 = initDomArr2.replace('##', `\n  ${i}?: ${formatGlobalName(urlname[urlname.length - 1])}${items.type == 'array' ? '[]' : ''};// ${(items.description || filterAttribute(i, element['parameters'])?.description)?.replace(/\n/g,'')}##`)
             if (numsetup == nums) {
               initDomArr2 = initDomArr2.replace('##', '')
-            } 
-            LoopTree(items, resData, element, swaggerItem,type)
+            }
+            LoopTree(items, resData, element, swaggerItem, type)
           } else {
             // 持续写入
-            initDomArr2 = initDomArr2.replace('##', `\n  ${i}?: ${formatInt64(items)};// ${items.description || filterAttribute(i, element['parameters'])?.description}## `)
+            initDomArr2 = initDomArr2.replace('##', `\n  ${i}?: ${formatInt64(items)};// ${(items.description || filterAttribute(i, element['parameters'])?.description)?.replace(/\n/g,'')}## `)
             if (numsetup == nums) {
               initDomArr2 = initDomArr2.replace('##', '')
-            } 
+            }
           }
         }
       }
@@ -525,6 +603,6 @@ function LoopTree(itemData, resData, element, swaggerItem, type=false) {
     activeName.push(name)
     swaggerItem.typeDom = swaggerItem.typeDom + initDomArr2 + '\n'
   } catch (error) {
-    console.log('该项结构混乱', element, error)
+    console.log('该项结构混乱', error)
   }
 }

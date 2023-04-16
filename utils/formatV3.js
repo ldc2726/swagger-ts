@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/03/25 15:30:41 Friday
  * @LastEditors: decong.li
- * @LastEditTime: 2022/08/12 16:14:14 Friday
+ * @LastEditTime: 2023/04/14 18:28:08 Friday
  * @FilePath: /swagger-ts/utils/formatV3.js
  */
 function GetType(data){
@@ -31,10 +31,11 @@ exports.formatV3 = function (res) {
             "name":elementData.operationId,
             "description": elementData.operationId,
             "required": true,
-            "schema": GetType(elementData.requestBody['content'])['schema']
+            "schema": findValue(elementData.requestBody,'schema')
+            // GetType(elementData.requestBody['content'])['schema']
           }]
         } catch (error) {
-          console.log(error,'请检查接口（格式是否正确,如非常规格式记得反馈）：'+ key)
+          console.log('请检查接口（格式是否正确,如非常规格式记得反馈）：'+ key)
         }
         
       }
@@ -42,10 +43,11 @@ exports.formatV3 = function (res) {
       if(elementData.responses['200']['content']){
         try {
           elementData.responses['200']={
-            schema:  GetType(elementData.responses['200']['content'])['schema']
+            schema: findValue(elementData.responses,'schema')
+            //  GetType(elementData.responses['200']['content'])['schema']
           }
         } catch {
-          console.log(error,'请检查接口（格式是否正确,如非常规格式记得反馈）：'+ key)
+          console.log('请检查接口（格式是否正确,如非常规格式记得反馈）：'+ key)
         }
       }
     }
@@ -70,3 +72,21 @@ exports.formatV3 = function (res) {
   }
   return res
 }
+
+function findValue(obj, key) {
+  if (obj.hasOwnProperty(key)) {
+    return obj[key];
+  }
+  
+  for (let prop in obj) {
+    if (typeof obj[prop] === 'object' && obj[prop] !== null) {
+      const result = findValue(obj[prop], key);
+      if (result !== undefined) {
+        return result;
+      }
+    }
+  }
+  
+  return undefined;
+}
+exports.findValue = findValue
