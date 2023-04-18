@@ -447,7 +447,7 @@ function ResV3Tree(datas) {//初始化接口和类型定义
   const docs = findValue(element, 'summary') || findValue(element, 'operationId')
   const properties = findValue(element['responses'], 'properties')
   if (properties) {
-    ResLoopV3Tree(name,docs,properties['data'], resData,swaggerItem)
+    ResLoopV3Tree(name+'Res',docs,properties['data'], resData,swaggerItem)
   }
   const RequestData = formatRequestData(element,name)
   const types = properties['data']['type']
@@ -464,7 +464,7 @@ function ResV3Tree(datas) {//初始化接口和类型定义
   swaggerItem.apiDom = swaggerItem.apiDom + httpreauestDom + '\n'
 }
 function ResLoopV3Tree(name,docs,items, resData,swaggerItem) {// 循环写入属性类型
-  let InitDom = initDom(name + 'Res', docs)
+  let InitDom = initDom(name, docs)
   let nums = 0;
   if (findValue(items,'$ref')) {
     const data = FormatJsonDom(resData, findValue(items,'$ref'))
@@ -472,17 +472,17 @@ function ResLoopV3Tree(name,docs,items, resData,swaggerItem) {// 循环写入属
       nums++
       const types = formatInt64(data['properties'][item], true)
       if(findValue(data['properties'][item],'$ref')){
-        InitDom = InitDom.replace('##', `\n  ${item}: ${types}Res;// ${item.description?.replace(/\n/g,'')}##`)
+        InitDom = InitDom.replace('##', `\n  ${item}: ${types};// ${item.description?.replace(/\n/g,'')}##`)
         ResLoopV3Tree(types,types,data['properties'][item],resData,swaggerItem)
       }else {
         InitDom = InitDom.replace('##', `\n  ${item}: ${types};// ${item.description?.replace(/\n/g,'')}##`)
       }
       if (Object.keys(data['properties']).length == nums) {
         InitDom = InitDom.replace('##', '')
-        if (activeName.includes(name+'Res')) {
+        if (activeName.includes(name)) {
           return;
         }
-        activeName.push(name+'Res')
+        activeName.push(name)
         swaggerItem.typeDom = swaggerItem.typeDom + InitDom + '\n'
       }
     })

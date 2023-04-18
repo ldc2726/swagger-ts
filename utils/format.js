@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/03/05 18:19:23 Saturday
  * @LastEditors: decong.li
- * @LastEditTime: 2023/04/14 16:38:07 Friday
+ * @LastEditTime: 2023/04/18 18:18:36 Tuesday
  * @FilePath: /swagger-ts/utils/format.js
  */
 
@@ -115,7 +115,7 @@ exports.formatInt64 = function(items,isRes=false){
     }
     typeName = items.items.$ref.split('/').pop()
     typeName = formatGlobalName(typeName)
-    return typeName+'[]'
+    return typeName+'Res[]'
   }
   if(items.$ref){
     typeName = items.$ref.split('/').pop()
