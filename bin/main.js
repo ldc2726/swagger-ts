@@ -188,7 +188,16 @@ program.option('-s, --set', 'set global config').on("option:set", function () {
       return validate || "不合法，请输入正确的hook的地址";
     },
     transformer: value => `：${value}`
-  }]
+  },
+  {
+    type: "input",
+    name: "npmOrg",
+    message: "请输入npm镜像源仓库地址（默认npm）",
+    default: 'https://www.npmjs.com/package/',
+    filter: value => value.trim(),
+    transformer: value => `：${value}`
+  },
+]
   const feishuList = [
     {
       type: "input",
@@ -206,13 +215,14 @@ program.option('-s, --set', 'set global config').on("option:set", function () {
       transformer: value => `：${value}`
     }
   ]
-  inquirer.prompt(promptList).then(({ msgName, hook }) => {
+  inquirer.prompt(promptList).then(({ msgName, npmOrg, hook }) => {
     if (msgName == "feishu") {
       inquirer.prompt(feishuList).then(({ token, email }) => {
         const packageJson = {
           "type": msgName,
           "hook": hook,
           "token": token,
+          "npmOrg":npmOrg,
           "email": email
         }
         packageString = JSON.stringify(packageJson, null, 2);
@@ -227,6 +237,7 @@ program.option('-s, --set', 'set global config').on("option:set", function () {
     if (msgName == "qywx") {
       const packageJson = {
         "type": msgName,
+        "npmOrg":npmOrg,
         "hook": hook,
       }
       const packageString = JSON.stringify(packageJson, null, 2);
