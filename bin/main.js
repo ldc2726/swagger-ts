@@ -18,7 +18,8 @@ const packageJson = require('./../package.json')
 var fs = require('fs');
 const loading = ora("接口生成中，请稍后⋯⋯");
 let newVsion = '1.0.0'
-let gitUrl = "github:ldc2726/swagger-api-template"
+// let gitUrl = "github:ldc2726/swagger-api-template"
+let gitUrl = "https://gitcode.net:qq_40513881/swagger-api-template"
 const activeName = []
 let isV3 = false
 program.version(packageJson.version)
@@ -77,7 +78,7 @@ program.option('-a, --add', 'add swagger api').on("option:add", function () {
   inquirer.prompt(questions).then(({ url, version, swagger, apiname }) => {
     loading.start();
     loading.info("模板下载中")
-    download(gitUrl, `./${apiname}`, function (err) {
+    download(gitUrl, `./${apiname}`, { clone: true }, function (err) {
       if (err) {
         loading.fail("下载失败！");
         console.log(chalk.red(err));
@@ -305,7 +306,7 @@ async function getSwaggerJson(url, apiName, version) {
     }
   }
   // 写入文件
-  WriteFile(`./${config.name}index.ts`, `type integer = number\ntype array =[]\ntype ref=any\n` + config.typeDom)
+  WriteFile(`./${config.name}index.ts`, `type integer = number\ntype array =[]\n` + config.typeDom)
   WriteFile(`./${config.apiName}index.ts`, apiInitDom('index') + config.apiDom)
   loading.succeed("swagger api同步完成！");
   if (!process.argv.includes('nopublish')) {
@@ -475,29 +476,34 @@ function ResV3Tree(datas) {//初始化接口和类型定义
   swaggerItem.apiDom = swaggerItem.apiDom + httpreauestDom + '\n'
 }
 function ResLoopV3Tree(name,docs,items, resData,swaggerItem) {// 循环写入属性类型
-  let InitDom = initDom(name, docs)
-  let nums = 0;
+  if (activeName.includes(name)) {
+    return;
+  }
   if (findValue(items,'$ref')) {
     const data = FormatJsonDom(resData, findValue(items,'$ref'))
-    Object.keys(data['properties']).map(item => {
-      nums++
-      const types = formatInt64(data['properties'][item], true)
-      if(findValue(data['properties'][item],'$ref')){
-        InitDom = InitDom.replace('##', `\n  ${item}: ${types};// ${item.description?.replace(/\n/g,'')}##`)
-        ResLoopV3Tree(types,types,data['properties'][item],resData,swaggerItem)
-      }else {
-        InitDom = InitDom.replace('##', `\n  ${item}: ${types};// ${item.description?.replace(/\n/g,'')}##`)
-      }
-      if (Object.keys(data['properties']).length == nums) {
-        InitDom = InitDom.replace('##', '')
-        if (activeName.includes(name)) {
-          return;
+    try {
+      activeName.push(name)
+      let nums = 0;
+      let InitDom = initDom(name, docs)
+      Object.keys(data['properties']).map(item => {
+        nums++
+        const types = formatInt64(data['properties'][item], true)
+        if(findValue(data['properties'][item],'$ref')){
+          InitDom = InitDom.replace('##', `\n  ${item}: ${types};// ${item.description?.replace(/\n/g,'')}##`)
+          ResLoopV3Tree(types,types,data['properties'][item],resData,swaggerItem)
+        }else {
+          InitDom = InitDom.replace('##', `\n  ${item}: ${types};// ${item.description?.replace(/\n/g,'')}##`)
         }
-        activeName.push(name)
-        swaggerItem.typeDom = swaggerItem.typeDom + InitDom + '\n'
+        if (Object.keys(data['properties']).length == nums) {
+          InitDom = InitDom.replace('##', '')
+          swaggerItem.typeDom = swaggerItem.typeDom + InitDom + '\n'
+        }
+      })
+    } catch (error) {
+      if(data&&name&&data.type){
+        swaggerItem.typeDom = swaggerItem.typeDom + defineInitDom(name,data.type) + '\n'
       }
-    })
-
+    }
   }
 }
 
