@@ -1,0 +1,14 @@
+{
+  "name": "sadsadsa",
+  "version": "1.0.2",
+  "description": "",
+  "main": "main.ts",
+  "swaggerpath": "https://t-datacenter.tarsocial.com/docs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "decong.li",
+  "license": "ISC",
+  "private": false,
+  "swaggerversion": "3.0.0"
+}

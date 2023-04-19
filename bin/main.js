@@ -94,6 +94,7 @@ program.option('-a, --add', 'add swagger api').on("option:add", function () {
           const packageJson = JSON.parse(data);
           packageJson.name = apiname;
           packageJson.swaggerpath = url
+          packageJson.swaggerversion = version
           packageString = JSON.stringify(packageJson, null, 2);
           fs.writeFile(`./${apiname}/package.json`, packageString, "utf8", err => {
             if (err) {
@@ -264,7 +265,7 @@ program.on("--help", function () {
 });
 
 // 执行请求
-async function getSwaggerJson(url, apiName, version) {
+async function getSwaggerJson(url, apiName, version, npmNewVersion) {
   axios.defaults.headers.common['Accept'] = 'application/json,*/*'
   axios.defaults.headers.common['Accept-Encoding'] = 'gzip, deflate'
   axios.defaults.headers.common['Accept-Language'] = 'zh-CN,zh;q=0.9,en;q=0.8'
@@ -310,22 +311,23 @@ async function getSwaggerJson(url, apiName, version) {
   WriteFile(`./${config.apiName}index.ts`, apiInitDom('index') + config.apiDom)
   loading.succeed("swagger api同步完成！");
   if (!process.argv.includes('nopublish')) {
+    loading.info(`cd ${apiName} && npm publish`);
     exec(`cd ${apiName} && npm publish`, function (error, stdout, stderr) {
       if (error) {
         loading.fail("发布失败！");
         console.error(error);
       }
       else {
-        if (version) {
-          newVsion = version
+        if (npmNewVersion) {
+          newVsion = npmNewVersion
         }
         readFile('./config.json').then(res => {
           const config = JSON.parse(res)
           if (config.type == "qywx") {
-            qywxMsg(apiName.replace('./', ''), newVsion, config.hook)
+            qywxMsg(apiName.replace('./', ''), newVsion, config.npmOrg)
           }
           if (config.type == "feishu") {
-            fsMsg(apiName.replace('./', ''), newVsion, config.hook, config.token, config.email)
+            fsMsg(apiName.replace('./', ''), newVsion, config.npmOrg, config.token, config.email)
           }
 
         })
