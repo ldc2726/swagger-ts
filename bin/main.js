@@ -64,7 +64,7 @@ program.option('-a, --add', 'add swagger api').on("option:add", function () {
     },
     {
       type: "input",
-      name: "apiname",
+      name: "apiName",
       message: "请输入生成api的名称",
       default: '',
       filter: value => value.trim(),
@@ -73,51 +73,59 @@ program.option('-a, --add', 'add swagger api').on("option:add", function () {
         return validate || "不合法，请输入正确的api的名称";
       },
       transformer: value => `：${value}`
+    },
+    {
+      type: "input",
+      name: "urlPrefix",
+      message: "请输入swaggere额外api的统一前缀（可选）",
+      default: '',
+      transformer: value => `：${value}`
     }
   ];
-  inquirer.prompt(questions).then(({ url, version, swagger, apiname }) => {
+  inquirer.prompt(questions).then(({ url, version, swagger, apiName, urlPrefix }) => {
     loading.start();
     loading.info("模板下载中")
-    download(gitUrl, `./${apiname}`, { clone: true }, function (err) {
+    download(gitUrl, `./${apiName}`, { clone: true }, function (err) {
       if (err) {
         loading.fail("下载失败！");
         console.log(chalk.red(err));
         process.exit();
       } else {
         loading.info("模板下载完成，请求swagger.json")
-        fs.readFile(`./${apiname}/package.json`, "utf8", (err, data) => {
+        fs.readFile(`./${apiName}/package.json`, "utf8", (err, data) => {
           if (err) {
             console.log(chalk.red(err));
             process.exit();
           }
           loading.info("swagger.json请求完毕，开始生成代码")
           const packageJson = JSON.parse(data);
-          packageJson.name = apiname;
+          packageJson.name = apiName;
           packageJson.swaggerpath = url
           packageJson.swaggerversion = version
+          packageJson.urlPrefix = urlPrefix
           packageString = JSON.stringify(packageJson, null, 2);
-          fs.writeFile(`./${apiname}/package.json`, packageString, "utf8", err => {
+          fs.writeFile(`./${apiName}/package.json`, packageString, "utf8", err => {
             if (err) {
               console.log(chalk.red(err));
               process.exit();
             }
-            getSwaggerJson(url, apiname, version)
+            getSwaggerJson({url, apiName, version, urlPrefix})
           })
 
         })
 
         const contentReadme =
           `
-# ${apiname}
+# ${apiName}
 api地址：[swagger-doc](${swagger})\n
 `
-        fs.readFile(`./${apiname}/README.md`, "utf8", (err, data) => {
+        fs.readFile(`./${apiName}/README.md`, "utf8", (err, data) => {
           if (err) {
             console.log(chalk.red(err));
             process.exit();
           }
-          data = data.replace(/xxx/g, apiname)
-          WriteFile(`./${apiname}/README.md`, contentReadme + data)
+          data = data.replace(/xxx/g, apiName)
+          WriteFile(`./${apiName}/README.md`, contentReadme + data)
         })
       }
     })
@@ -265,7 +273,7 @@ program.on("--help", function () {
 });
 
 // 执行请求
-async function getSwaggerJson(url, apiName, version, npmNewVersion) {
+async function getSwaggerJson({url, apiName, version, npmNewVersion, urlPrefix}) {
   axios.defaults.headers.common['Accept'] = 'application/json,*/*'
   axios.defaults.headers.common['Accept-Encoding'] = 'gzip, deflate'
   axios.defaults.headers.common['Accept-Language'] = 'zh-CN,zh;q=0.9,en;q=0.8'
@@ -299,7 +307,7 @@ async function getSwaggerJson(url, apiName, version, npmNewVersion) {
       const data2 = {
         resData: resData,
         element: element,
-        key: key,
+        key: urlPrefix+key,
         requestTypes: requestType(pathList[key]),
         swaggerItem: config
       }

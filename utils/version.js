@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/06/02 13:22:19 Thursday
  * @LastEditors: decong.li
- * @LastEditTime: 2023/04/19 13:35:23 Wednesday
+ * @LastEditTime: 2023/04/19 16:48:44 Wednesday
  * @FilePath: /swagger-ts/utils/version.js
  */
 var fs = require('fs');
@@ -29,7 +29,14 @@ exports.versionUpdate = function(apiname,getSwaggerJson){
         console.log(chalk.red(err));
         process.exit();
       }
-      getSwaggerJson(packageJson.swaggerpath, apiname,packageJson.swaggerversion, newVsion)
+      const objs = {
+        url: packageJson.swaggerpath, 
+        apiName: apiname, 
+        version: packageJson.swaggerversion, 
+        npmNewVersion: newVsion, 
+        urlPrefix: packageJson.urlPrefix
+      }
+      getSwaggerJson(objs)
     })
   })
 }
