@@ -315,7 +315,7 @@ async function getSwaggerJson({url, apiName, version, npmNewVersion, urlPrefix})
     }
   }
   // 写入文件
-  WriteFile(`./${config.name}index.ts`, `type integer = number\ntype array =[]\n` + config.typeDom)
+  WriteFile(`./${config.name}index.ts`, `type integer = number\ntype array = any[]\n` + config.typeDom)
   WriteFile(`./${config.apiName}index.ts`, apiInitDom('index') + config.apiDom)
   loading.succeed("swagger api同步完成！");
   if (!process.argv.includes('nopublish')) {
