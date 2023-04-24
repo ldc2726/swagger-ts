@@ -468,17 +468,27 @@ function ResV3Tree(datas) {//初始化接口和类型定义
   let name = rename(element, key)
   const docs = findValue(element, 'summary') || findValue(element, 'operationId')
   const properties = findValue(element['responses'], 'properties')
+ 
   if (properties) {
     ResLoopV3Tree(name+'Res',docs,properties['data'], resData,swaggerItem)
   }
   const RequestData = formatRequestData(element,name)
-  const types = properties['data']['type']
+  const proDatas = properties['data']
+  let types='',typeName='';
+  if(proDatas){
+    types = proDatas.type
+    if(proDatas['$ref']){
+      typeName = `types.${name}Res`
+    } else {
+      typeName = 'any'
+    }
+  } else {
+    typeName = 'any'
+  }
   let httpreauestDom = InitHttpDom(
     name,
     RequestData ? RequestData : '',
-    types == 'array' ? `types.${name}Res[]` : (
-      types==undefined?`types.${name}Res`:'any'
-    ),
+    typeName,
     key,
     element.summary,
     requestTypes
@@ -487,6 +497,11 @@ function ResV3Tree(datas) {//初始化接口和类型定义
 }
 function ResLoopV3Tree(name,docs,items, resData,swaggerItem) {// 循环写入属性类型
   if (activeName.includes(name)) {
+    return;
+  }
+  // console.log(items,name, docs,'++++')
+  if(items=='undefined'||items==undefined){
+    console.log(docs,items)
     return;
   }
   if (findValue(items,'$ref')) {

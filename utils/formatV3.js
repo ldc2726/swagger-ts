@@ -2,7 +2,7 @@
  * @Author: decong.li
  * @Date: 2022/03/25 15:30:41 Friday
  * @LastEditors: decong.li
- * @LastEditTime: 2023/04/14 18:28:08 Friday
+ * @LastEditTime: 2023/04/24 16:18:45 Monday
  * @FilePath: /swagger-ts/utils/formatV3.js
  */
 function GetType(data){
