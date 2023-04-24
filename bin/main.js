@@ -109,7 +109,7 @@ program.option('-a, --add', 'add swagger api').on("option:add", function () {
               console.log(chalk.red(err));
               process.exit();
             }
-            getSwaggerJson({url, apiName, version, urlPrefix})
+            getSwaggerJson({ url, apiName, version, urlPrefix })
           })
 
         })
@@ -207,7 +207,7 @@ program.option('-s, --set', 'set global config').on("option:set", function () {
     filter: value => value.trim(),
     transformer: value => `：${value}`
   },
-]
+  ]
   const feishuList = [
     {
       type: "input",
@@ -232,7 +232,7 @@ program.option('-s, --set', 'set global config').on("option:set", function () {
           "type": msgName,
           "hook": hook,
           "token": token,
-          "npmOrg":npmOrg,
+          "npmOrg": npmOrg,
           "email": email
         }
         packageString = JSON.stringify(packageJson, null, 2);
@@ -247,7 +247,7 @@ program.option('-s, --set', 'set global config').on("option:set", function () {
     if (msgName == "qywx") {
       const packageJson = {
         "type": msgName,
-        "npmOrg":npmOrg,
+        "npmOrg": npmOrg,
         "hook": hook,
       }
       const packageString = JSON.stringify(packageJson, null, 2);
@@ -273,7 +273,7 @@ program.on("--help", function () {
 });
 
 // 执行请求
-async function getSwaggerJson({url, apiName, version, npmNewVersion, urlPrefix}) {
+async function getSwaggerJson({ url, apiName, version, npmNewVersion, urlPrefix }) {
   axios.defaults.headers.common['Accept'] = 'application/json,*/*'
   axios.defaults.headers.common['Accept-Encoding'] = 'gzip, deflate'
   axios.defaults.headers.common['Accept-Language'] = 'zh-CN,zh;q=0.9,en;q=0.8'
@@ -307,7 +307,7 @@ async function getSwaggerJson({url, apiName, version, npmNewVersion, urlPrefix})
       const data2 = {
         resData: resData,
         element: element,
-        key: urlPrefix+key,
+        key: urlPrefix + key,
         requestTypes: requestType(pathList[key]),
         swaggerItem: config
       }
@@ -392,7 +392,7 @@ function ResTree(itemData, resData, element, key, requestTypes, swaggerItem) {
     result = properties.result || properties.data || 'any'
   }
   let name = rename(element, key)
-  const RequestData = formatRequestData(element,name)
+  const RequestData = formatRequestData(element, name)
   if (result && result.$ref) {
     const resOneData = FormatJsonDom(resData, result.$ref)
     ResLoopTree(resData, resOneData, element, swaggerItem)
@@ -468,19 +468,26 @@ function ResV3Tree(datas) {//初始化接口和类型定义
   let name = rename(element, key)
   const docs = findValue(element, 'summary') || findValue(element, 'operationId')
   const properties = findValue(element['responses'], 'properties')
- 
+
   if (properties) {
-    ResLoopV3Tree(name+'Res',docs,properties['data'], resData,swaggerItem)
+    ResLoopV3Tree(name + 'Res', docs, properties['data'], resData, swaggerItem)
   }
-  const RequestData = formatRequestData(element,name)
+  const RequestData = formatRequestData(element, name)
   const proDatas = properties['data']
-  let types='',typeName='';
-  if(proDatas){
-    types = proDatas.type
-    if(proDatas['$ref']){
-      typeName = `types.${name}Res`
-    } else {
-      typeName = 'any'
+  let typeName = '';
+  if (proDatas) {
+    if(proDatas.type=='array'){
+      if(proDatas.items){
+        typeName = `types.${name}Res[]`
+      } else {
+        typeName = `any[]`
+      }
+    }else {
+      if (proDatas['$ref']) {
+        typeName = `types.${name}Res`
+      } else {
+        typeName = 'any'
+      }
     }
   } else {
     typeName = 'any'
@@ -495,17 +502,15 @@ function ResV3Tree(datas) {//初始化接口和类型定义
   )
   swaggerItem.apiDom = swaggerItem.apiDom + httpreauestDom + '\n'
 }
-function ResLoopV3Tree(name,docs,items, resData,swaggerItem) {// 循环写入属性类型
+function ResLoopV3Tree(name, docs, items, resData, swaggerItem) {// 循环写入属性类型
   if (activeName.includes(name)) {
     return;
   }
-  // console.log(items,name, docs,'++++')
-  if(items=='undefined'||items==undefined){
-    console.log(docs,items)
+  if (items == 'undefined' || items == undefined) {
     return;
   }
-  if (findValue(items,'$ref')) {
-    const data = FormatJsonDom(resData, findValue(items,'$ref'))
+  if (findValue(items, '$ref')) {
+    const data = FormatJsonDom(resData, findValue(items, '$ref'))
     try {
       activeName.push(name)
       let nums = 0;
@@ -513,11 +518,11 @@ function ResLoopV3Tree(name,docs,items, resData,swaggerItem) {// 循环写入属
       Object.keys(data['properties']).map(item => {
         nums++
         const types = formatInt64(data['properties'][item], true)
-        if(findValue(data['properties'][item],'$ref')){
-          InitDom = InitDom.replace('##', `\n  ${item}: ${types};// ${item.description?.replace(/\n/g,'')}##`)
-          ResLoopV3Tree(types,types,data['properties'][item],resData,swaggerItem)
-        }else {
-          InitDom = InitDom.replace('##', `\n  ${item}: ${types};// ${item.description?.replace(/\n/g,'')}##`)
+        if (findValue(data['properties'][item], '$ref')) {
+          InitDom = InitDom.replace('##', `\n  ${item}: ${types};// ${item.description?.replace(/\n/g, '')}##`)
+          ResLoopV3Tree(types, types, data['properties'][item], resData, swaggerItem)
+        } else {
+          InitDom = InitDom.replace('##', `\n  ${item}: ${types};// ${item.description?.replace(/\n/g, '')}##`)
         }
         if (Object.keys(data['properties']).length == nums) {
           InitDom = InitDom.replace('##', '')
@@ -525,8 +530,8 @@ function ResLoopV3Tree(name,docs,items, resData,swaggerItem) {// 循环写入属
         }
       })
     } catch (error) {
-      if(data&&name&&data.type){
-        swaggerItem.typeDom = swaggerItem.typeDom + defineInitDom(name,data.type) + '\n'
+      if (data && name && data.type) {
+        swaggerItem.typeDom = swaggerItem.typeDom + defineInitDom(name, data.type) + '\n'
       }
     }
   }
@@ -561,7 +566,7 @@ function QueryOneTree(resData, element, swaggerItem, key) {
         const type = item.type || item.schema.type
         const format = item.format || item.schema?.format
         const $ref = item.$ref || item.schema?.$ref
-        initDomArr2 = initDomArr2.replace('##', `\n  ${item.name}?: ${type ? (format == "int64" ? "number|string" : type) : formatGlobalName(item.name)};// ${item.description?.replace(/\n/g,'')}##`)
+        initDomArr2 = initDomArr2.replace('##', `\n  ${item.name}?: ${type ? (format == "int64" ? "number|string" : type) : formatGlobalName(item.name)};// ${item.description?.replace(/\n/g, '')}##`)
         if (newArr.length == i + 1) {
           initDomArr2 = initDomArr2.replace('##', '')
         }
@@ -624,14 +629,14 @@ function LoopTree(itemData, resData, element, swaggerItem, type = false) {
           if (items.$ref || (items.items && items.items.$ref)) {
             let urlname = items.$ref || items.items.$ref
             urlname = urlname.split('/')
-            initDomArr2 = initDomArr2.replace('##', `\n  ${i}?: ${formatGlobalName(urlname[urlname.length - 1])}${items.type == 'array' ? '[]' : ''};// ${(items.description || filterAttribute(i, element['parameters'])?.description)?.replace(/\n/g,'')}##`)
+            initDomArr2 = initDomArr2.replace('##', `\n  ${i}?: ${formatGlobalName(urlname[urlname.length - 1])}${items.type == 'array' ? '[]' : ''};// ${(items.description || filterAttribute(i, element['parameters'])?.description)?.replace(/\n/g, '')}##`)
             if (numsetup == nums) {
               initDomArr2 = initDomArr2.replace('##', '')
             }
             LoopTree(items, resData, element, swaggerItem, type)
           } else {
             // 持续写入
-            initDomArr2 = initDomArr2.replace('##', `\n  ${i}?: ${formatInt64(items)};// ${(items.description || filterAttribute(i, element['parameters'])?.description)?.replace(/\n/g,'')}## `)
+            initDomArr2 = initDomArr2.replace('##', `\n  ${i}?: ${formatInt64(items)};// ${(items.description || filterAttribute(i, element['parameters'])?.description)?.replace(/\n/g, '')}## `)
             if (numsetup == nums) {
               initDomArr2 = initDomArr2.replace('##', '')
             }
