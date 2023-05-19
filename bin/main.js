@@ -281,6 +281,7 @@ async function getSwaggerJson({ url, apiName, version, npmNewVersion, urlPrefix 
   try {
     res = await axios.get(url)
   } catch (error) {
+    console.log(error)
     loading.fail("网络异常，接口请求失败！");
   }
 
