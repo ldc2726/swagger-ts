@@ -474,23 +474,27 @@ function ResV3Tree(datas) {//初始化接口和类型定义
     ResLoopV3Tree(name + 'Res', docs, properties['data'], resData, swaggerItem)
   }
   const RequestData = formatRequestData(element, name)
-  const proDatas = properties['data']
   let typeName = '';
-  if (proDatas) {
-    if(proDatas.type=='array'){
-      if(proDatas.items){
-        typeName = `types.${name}Res[]`
-      } else {
-        typeName = `any[]`
+  try {
+    const proDatas = properties['data']
+    if (proDatas) {
+      if(proDatas.type=='array'){
+        if(proDatas.items){
+          typeName = `types.${name}Res[]`
+        } else {
+          typeName = `any[]`
+        }
+      }else {
+        if (proDatas['$ref']) {
+          typeName = `types.${name}Res`
+        } else {
+          typeName = 'any'
+        }
       }
-    }else {
-      if (proDatas['$ref']) {
-        typeName = `types.${name}Res`
-      } else {
-        typeName = 'any'
-      }
+    } else {
+      typeName = 'any'
     }
-  } else {
+  } catch (error) {
     typeName = 'any'
   }
   let httpreauestDom = InitHttpDom(
