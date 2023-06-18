@@ -23,7 +23,7 @@ exports.formatV3 = function (res) {
       //   // }]
       // }
       // 处理响应结果
-      let elementData = element.post || element.delete|| element.put||  element.get
+      let elementData = element.post || element.delete|| element.put||  element.get || element.patch
       if(elementData&&elementData.requestBody){
         try {
           elementData.parameters = [{
