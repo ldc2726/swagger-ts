@@ -2,8 +2,8 @@
 当前端web项目中应用了ts，我们不可能对成千上百的接口进行 `interface`的类型定义,那样效率是极低的，但是我们又需要ts智能友好的提示信息，该怎么办？这是我们必须要面对的问题。
 ## 介绍
 根据`swagger.json`地址迅速生成ts接口，以及相关请求响应参的`interface`模块命令行工具。且支持swagger的V1、V2、V3版本。该插件的宗旨是利用swagger接口文档让前端的效率变得更高，接口的请求参、响应参以及接口命名将不在需要手动引入，让前端更聚焦在业务功能的开发，接口将全面与swagger进行同步。
-
-我们该插件推荐大家结合`git`和`npm`对生成的每个版本的ts请求文件进行版本管控，这样可以防止swagger变更带来的问题以便回退到旧的版本，因此你需要额外建立一个git用于存储本次生成的所有的api，一个npm发布管控npm包，项目组按照npm的版本进行拉去引入使用。
+## 使用方式
+1.我们该插件推荐大家结合`git`和`npm`对生成的每个版本的ts请求文件进行版本管控，这样可以防止swagger变更带来的问题以便回退到旧的版本，因此你需要额外建立一个git用于存储本次生成的所有的api，一个npm发布管控npm包，项目组按照npm的版本进行拉去引入使用。
 
 ```mermaid
 graph LR
@@ -16,6 +16,19 @@ E-->F
 F-- 更新版本发布 -->G(npm)
 G--拉取npm包-->前端业务代码
 ```
+
+2.可以直接在项目中进行使用，这种方法稍微简单一点，缺点是一旦操作，代码将全部覆盖，不能回退，所以你要确保后端对接口文档没有进行调整，如命名、DTO命名、字段、类型等。所以不是特别推荐，但是简单，同样的你可以通过git历史来进行查找。
+
+```mermaid
+graph LR
+A[api服务] -- 发布生成 --> B(swagger)
+B -- 调用该插件 --> C{命令}
+C -- -a命令添加-->D(生成ts请求文件与声明文件)
+C -- -u命令更新 -->E(更新ts请求文件与声明文件)
+D-->F(前端业务代码)
+E-->F
+```
+
 ## OSCS
 [![OSCS Status](https://www.oscs1024.com/platform/badge/ldc2726/swagger-ts.svg?size=large)](https://www.oscs1024.com/project/ldc2726/swagger-ts?ref=badge_large)
 
@@ -24,7 +37,12 @@ G--拉取npm包-->前端业务代码
 ### 1. 安装
 
 ```
-npm install swagger-ts-api -g 
+# 全局安装
+npm install swagger-ts-api -g  
+# 开发依赖安装
+npm install swagger-ts-api -D 
+# 生产依赖安装
+npm install swagger-ts-api -S 
 ```
 
 ### 2. 跟随引导操作
@@ -32,9 +50,19 @@ npm install swagger-ts-api -g
 ##### 在自己目录中执行添加命令(发布npm和不发布npm的区别就在于 `nopublish` )：
 ```
 swagger-ts -a #添加新的swagger api 并发布到npm，请确保自己的npm已经登陆
-swagger-ts -a nopublish #添加新的swagger api，通常用于仅添加本地不采用npm管理版本
+
+swagger-ts -a nopublish #添加新的swagger api，通常用于仅添加本地不采用npm管理版本，这句命令你也直接可以放到项目中的`package.json`进行执行
 
 ```
+
+```javascript
+{
+  "scripts": {
+    "update": "swagger-ts -a nopublish"
+  }
+}
+```
+
 
 ```
 # 效果：
