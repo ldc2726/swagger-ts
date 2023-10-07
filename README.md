@@ -159,6 +159,9 @@ export interface GeoAddressVo {
 3. 项目中接口方法命名，请求参原则上是以`operationId`和 `DTO`进行命名，如果没有，插件将会以`path路径`后两位进行命名，如：
 `/api/v1/abccodereport/getgoodnames` => `abccodereportGetgoodnames`
 
+
+如果您在使用中遇到什么问题，请及时提出`issues`,我们将在第一时间进行查找修正。
+
 ⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️开源不易，麻烦大家点个star，谢谢⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️
 
 
