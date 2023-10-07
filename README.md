@@ -51,14 +51,15 @@ npm install swagger-ts-api -S
 ```
 swagger-ts -a #添加新的swagger api 并发布到npm，请确保自己的npm已经登陆
 
-swagger-ts -a nopublish #添加新的swagger api，通常用于仅添加本地不采用npm管理版本，这句命令你也直接可以放到项目中的`package.json`进行执行
+swagger-ts -a nopublish #添加新的swagger api，通常用于仅添加本地不采用npm管理版本，这句命令你也直接可以放到项目中的`package.json`，然后直接执行对应的命令
 
 ```
 
 ```javascript
 {
   "scripts": {
-    "update": "swagger-ts -a nopublish"
+    "swagger:add": "swagger-ts -a nopublish",
+    "swagger:update": "swagger-ts -u nopublish"
   }
 }
 ```
